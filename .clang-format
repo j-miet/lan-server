@@ -7,5 +7,5 @@ PointerAlignment: Left
 
 AllowShortEnumsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
