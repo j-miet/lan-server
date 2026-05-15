@@ -3,26 +3,39 @@
 #include <sys/socket.h>
 
 #include "client.h"
+#include "http.h"
+#include "response.h"
 
 void handle_client(int client_fd) {
-    char buffer[4096]; // 4 * 1024 bytes = 4kb buffer, standard size for a memory page
+    char buffer[4096];
 
     while (1) {
-        int bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0); // blocking until client input
+        int bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
 
         if (bytes <= 0)
             return;
 
-        // wrap request data into struct
-        Request req;
-        req.length = bytes;
-        memcpy(req.data, buffer, bytes);
-        req.data[bytes] = '\0'; // in recv, leave a single byte for termination character
+        HttpRequest req;
 
-        printf("Received:\n%s\n", req.data);
+        if (parse_http_request(buffer, &req) < 0) {
+            printf("Invalid HTTP request\n");
+            return;
+        }
 
-        send(client_fd, req.data, req.length, 0);
+        printf("Method: %s\n", req.method);
+        printf("Path: %s\n", req.path);
+        printf("Version: %s\n", req.version);
+
+        route_request(client_fd, &req);
     }
+}
 
-    printf("Client disconnected\n");
+void route_request(int client_fd, HttpRequest* req) {
+    if (strcmp(req->path, "/") == 0) {
+        send_text_response(client_fd, 200, "OK", "Home page");
+    } else if (strcmp(req->path, "/hello") == 0) {
+        send_text_response(client_fd, 200, "OK", "Hello!");
+    } else {
+        send_text_response(client_fd, 404, "Not Found", "404 Not Found");
+    }
 }
