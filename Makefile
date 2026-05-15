@@ -8,7 +8,3 @@ build:
 server:
 	chmod +x lan-server
 	./lan-server
-test:
-	$(CC) $(CFLAGS) $(SRC) -o lan-server
-	chmod +x lan-server
-	./lan-server

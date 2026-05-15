@@ -10,7 +10,7 @@ void start_server(int port) {
     int server_fd = create_server_socket(port);
 
     while (1) {
-        int client_fd = accept(server_fd, NULL, NULL); // blocking until a client connects
+        int client_fd = accept(server_fd, NULL, NULL);
 
         if (client_fd < 0) {
             perror("accept");
