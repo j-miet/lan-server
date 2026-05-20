@@ -32,11 +32,3 @@ int create_server_socket(int port) {
 
     return server_fd;
 }
-
-int socket_recv(int client_fd, char* buffer, int size) {
-    return recv(client_fd, buffer, size, 0);
-}
-
-int socket_send(int client_fd, const char* buffer, int size) {
-    return send(client_fd, buffer, size, 0);
-}

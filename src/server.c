@@ -17,7 +17,7 @@ void start_server(int port) {
             continue;
         }
 
-        printf("Client connected\n");
+        printf("-- Client connected --\n");
 
         handle_client(client_fd);
 
