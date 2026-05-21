@@ -9,7 +9,7 @@ int get_content_length(const char* raw) {
     if (!header)
         return 0;
 
-    int length;
+    int length = 0;
 
     sscanf(header, "Content-Length: %d", &length);
 

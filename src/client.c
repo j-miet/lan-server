@@ -6,21 +6,20 @@
 #include "client.h"
 #include "file.h"
 #include "http.h"
+#include "request.h"
 #include "response.h"
 
 void handle_client(int client_fd) {
-    char buffer[4096];
+    RawRequest raw;
 
-    int bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-
-    if (bytes <= 0)
+    if (read_http_request(client_fd, &raw) < 0)
         return;
 
-    buffer[bytes] = '\0';
     HttpRequest req;
 
-    if (parse_http_request(buffer, &req) < 0) {
+    if (parse_http_request(raw.data, &req) < 0) {
         printf("Invalid HTTP request\n");
+        free_request(&raw);
         return;
     }
 
@@ -29,6 +28,8 @@ void handle_client(int client_fd) {
     printf("Version: %s\n", req.version);
 
     route_request(client_fd, &req);
+
+    free_request(&raw);
 }
 
 void serve_static_file(int client_fd, const char* path) {
