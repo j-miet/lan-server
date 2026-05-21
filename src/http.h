@@ -10,6 +10,7 @@ typedef struct {
     int content_length;
 } HttpRequest;
 
+int get_boundary(const char* raw, char* boundary, int size);
 int get_content_length(const char* raw);
 int parse_http_request(const char* raw, HttpRequest* req);
 

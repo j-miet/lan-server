@@ -6,7 +6,7 @@
 #include "client.h"
 #include "file.h"
 #include "http.h"
-#include "request.h"
+#include "multipart.h"
 #include "response.h"
 #include "sanitize.h"
 
@@ -26,7 +26,7 @@ void handle_client(int client_fd) {
     printf("Path: %s\n", req.path);
     printf("Version: %s\n", req.version);
 
-    route_request(client_fd, &req);
+    route_request(client_fd, &req, &raw);
 
     free_request(&raw);
 }
@@ -61,22 +61,44 @@ void serve_text(int client_fd, const char* msg) {
     send_text_response(client_fd, 200, "OK", msg);
 }
 
-void handle_upload(int client_fd, HttpRequest* req) {
-    FILE* file = fopen("uploads/upload.bin", "wb");
+void handle_upload(int client_fd, HttpRequest* req, RawRequest* raw) {
+    char boundary[256];
 
-    if (!file) {
-        send_text_response(client_fd, 500, "Internal Server Error", "Failed to open file");
+    if (get_boundary(raw->data, boundary, sizeof(boundary)) < 0) {
+        send_text_response(client_fd, 400, "Bad Request", "Missing boundary");
 
         return;
     }
 
-    fwrite(req->body, 1, req->content_length, file);
-    fclose(file);
+    UploadedFile file;
 
-    send_text_response(client_fd, 200, "OK", "Upload successful");
+    int body_size = req->content_length;
+
+    if (parse_multipart(req->body, body_size, boundary, &file) < 0) {
+        send_text_response(client_fd, 400, "Bad Request", "Invalid multipart data");
+
+        return;
+    }
+
+    char path[512];
+
+    snprintf(path, sizeof(path), "uploads/%s", file.filename);
+
+    FILE* fp = fopen(path, "wb");
+
+    if (!fp) {
+        send_text_response(client_fd, 500, "Internal Server Error", "Failed to save file");
+
+        return;
+    }
+
+    fwrite(file.data, 1, file.size, fp);
+    fclose(fp);
+
+    send_text_response(client_fd, 200, "OK", "Upload succesful");
 }
 
-void route_request(int client_fd, HttpRequest* req) {
+void route_request(int client_fd, HttpRequest* req, RawRequest* raw) {
     if (strcmp(req->path, "/") == 0) {
 
         serve_static_file(client_fd, "/index.html");
@@ -85,7 +107,7 @@ void route_request(int client_fd, HttpRequest* req) {
         serve_text(client_fd, "Hello from server!");
     } else if (strcmp(req->method, "POST") == 0 && strcmp(req->path, "/upload") == 0) {
 
-        handle_upload(client_fd, req);
+        handle_upload(client_fd, req, raw);
     } else {
         serve_static_file(client_fd, req->path);
     }
