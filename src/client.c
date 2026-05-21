@@ -8,15 +8,14 @@
 #include "http.h"
 #include "request.h"
 #include "response.h"
+#include "sanitize.h"
 
 void handle_client(int client_fd) {
     RawRequest raw;
-
     if (read_http_request(client_fd, &raw) < 0)
         return;
 
     HttpRequest req;
-
     if (parse_http_request(raw.data, &req) < 0) {
         printf("Invalid HTTP request\n");
         free_request(&raw);
@@ -34,6 +33,12 @@ void handle_client(int client_fd) {
 
 void serve_static_file(int client_fd, const char* path) {
     char full_path[512];
+
+    if (!is_safe_path(path)) {
+        send_text_response(client_fd, 403, "Forbidden", "Forbidden");
+
+        return;
+    }
 
     snprintf(full_path, sizeof(full_path), "public%s", path);
 
