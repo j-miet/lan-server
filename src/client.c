@@ -51,11 +51,35 @@ void serve_static_file(int client_fd, const char* path) {
     free(data); // empty the buffer whicn was dynamically allocated in read_file
 }
 
+void serve_text(int client_fd, const char* msg) {
+    send_text_response(client_fd, 200, "OK", msg);
+}
+
+void handle_upload(int client_fd, HttpRequest* req) {
+    FILE* file = fopen("uploads/upload.bin", "wb");
+
+    if (!file) {
+        send_text_response(client_fd, 500, "Internal Server Error", "Failed to open file");
+
+        return;
+    }
+
+    fwrite(req->body, 1, req->content_length, file);
+    fclose(file);
+
+    send_text_response(client_fd, 200, "OK", "Upload successful");
+}
+
 void route_request(int client_fd, HttpRequest* req) {
     if (strcmp(req->path, "/") == 0) {
+
         serve_static_file(client_fd, "/index.html");
     } else if (strcmp(req->path, "/hello") == 0) {
-        send_text_response(client_fd, 200, "OK", "Hello from server!");
+
+        serve_text(client_fd, "Hello from server!");
+    } else if (strcmp(req->method, "POST") == 0 && strcmp(req->path, "/upload") == 0) {
+
+        handle_upload(client_fd, req);
     } else {
         serve_static_file(client_fd, req->path);
     }
