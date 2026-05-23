@@ -1,0 +1,35 @@
+body {
+    font-family: sans-serif;
+    background: #1f1f1f;
+    padding: 40px;
+}
+
+.container {
+    max-width: 700px;
+    margin: auto;
+    background: gray;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+#drop-zone {
+    border: 3px dashed white;
+    padding: 40px;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+#drop-zone.dragover {
+    background: #ddd;
+}
+
+.file-entry {
+    padding: 10px;
+    background: #6f6f6f;
+    border-bottom: 1px solid #ccd;
+}
+
+.file-entry a, .file-entry a:visited {
+    color: rgb(139, 224, 224);
+}

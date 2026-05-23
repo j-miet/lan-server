@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <meta charset="UTF-8">
+    <title>LAN Server</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
 <body>
-    <h1>Hello from lan-server!</h1>
+    <div class="container">
+        <h1>LAN Server</h1>
+        <div id="drop-zone">
+            Drag files here for uploading
+        </div>
+
+        <input type="file" id="file-input" hidden>
+
+        <h2>Files</h2>
+        <div id="file-list">
+            Loading...
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
 </body>
 </html>
