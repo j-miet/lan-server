@@ -24,7 +24,7 @@ void send_response(int client_fd, int status_code, const char* status_text, cons
     send(client_fd, response, response_length, 0);
 }
 
-void send_indirect_response(int client_fd, const char* location) {
+void send_redirect_response(int client_fd, const char* location) {
     char response[1024];
 
     int length = snprintf(response, sizeof(response),

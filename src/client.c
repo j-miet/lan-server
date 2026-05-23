@@ -63,7 +63,7 @@ void serve_text(int client_fd, const char* msg) {
     send_text_response(client_fd, 200, "OK", msg);
 }
 
-void handle_upload(int client_fd, HttpRequest* req, RawRequest* raw) {
+void handle_upload_api(int client_fd, HttpRequest* req, RawRequest* raw) {
     char boundary[256];
 
     if (get_boundary(raw->data, boundary, sizeof(boundary)) < 0) {
@@ -97,10 +97,10 @@ void handle_upload(int client_fd, HttpRequest* req, RawRequest* raw) {
     fwrite(file.data, 1, file.size, fp);
     fclose(fp);
 
-    send_indirect_response(client_fd, "/upload.html");
+    send_redirect_response(client_fd, "/index.html");
 }
 
-void handle_file_list(int client_fd) {
+void handle_files_api(int client_fd) {
     DIR* dir = opendir("uploads");
 
     if (!dir) {
@@ -109,35 +109,33 @@ void handle_file_list(int client_fd) {
         return;
     }
 
-    char html[16384]; // adapt this eventually from static size to dynamic
-
-    strcpy(html, "<!DOCTYPE html>"
-                 "<html><body>"
-                 "<h1>Uploaded files</h1>"
-                 "<ul>");
+    char json[16384];
+    strcpy(json, "[");
 
     struct dirent* dir_entry;
+    int first = 1;
 
     while ((dir_entry = readdir(dir)) != NULL) {
         if (strcmp(dir_entry->d_name, ".") == 0 || strcmp(dir_entry->d_name, "..") == 0) {
             continue;
         }
 
-        char line[1024];
+        if (!first)
+            strcat(json, ",");
 
-        snprintf(line, sizeof(line),
-                 "<li>"
-                 "<a href=\"/download/%s\">%s</a>"
-                 "</li>",
-                 dir_entry->d_name, dir_entry->d_name);
+        first = 0;
 
-        strcat(html, line);
+        char item[512];
+
+        snprintf(item, sizeof(item), "\"%s\"", dir_entry->d_name);
+
+        strcat(json, item);
     }
 
-    strcat(html, "</ul></body></html>");
+    strcat(json, "]");
     closedir(dir);
 
-    send_response(client_fd, 200, "OK", "text/html", html);
+    send_response(client_fd, 200, "OK", "application/json", json);
 }
 
 void handle_download(int client_fd, const char* path) {
@@ -177,16 +175,18 @@ void route_request(int client_fd, HttpRequest* req, RawRequest* raw) {
     } else if (strcmp(req->path, "/hello") == 0) {
 
         serve_text(client_fd, "Hello from server!");
-    } else if (strcmp(req->method, "POST") == 0 && strcmp(req->path, "/upload") == 0) {
-
-        handle_upload(client_fd, req, raw);
-    } else if (strcmp(req->path, "/files") == 0) {
-
-        handle_file_list(client_fd);
     } else if (strncmp(req->path, "/download/", 10) == 0) {
 
         handle_download(client_fd, req->path);
+
+    } else if (strcmp(req->method, "POST") == 0 && strcmp(req->path, "/api/upload") == 0) {
+
+        handle_upload_api(client_fd, req, raw);
+    } else if (strcmp(req->path, "/api/files") == 0) {
+
+        handle_files_api(client_fd);
     } else {
+        // for other webUI dependencies
         serve_static_file(client_fd, req->path);
     }
 }
