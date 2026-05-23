@@ -18,5 +18,6 @@ void route_request(int client_fd, HttpRequest* req, RawRequest* raw);
 
 void handle_upload_api(int client_fd, HttpRequest* req, RawRequest* raw);
 void handle_files_api(int client_fd);
+void handle_delete_file(int client_fd, const char* path);
 
 #endif

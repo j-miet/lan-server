@@ -25,6 +25,7 @@ body {
 }
 
 .file-entry {
+    display: flex;
     padding: 10px;
     background: #6f6f6f;
     border-bottom: 1px solid #ccd;
@@ -32,4 +33,8 @@ body {
 
 .file-entry a, .file-entry a:visited {
     color: rgb(139, 224, 224);
+}
+
+.file-entry button {
+    margin-left: auto;
 }

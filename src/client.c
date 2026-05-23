@@ -168,6 +168,31 @@ void handle_download(int client_fd, const char* path) {
     free(data);
 }
 
+void handle_delete_file(int client_fd, const char* path) {
+    const char* filename = path + 11;
+
+    char decoded[256];
+
+    url_decode(decoded, filename);
+
+    if (!is_safe_path(decoded)) {
+        send_text_response(client_fd, 403, "Forbidden", "Forbidden");
+
+        return;
+    }
+
+    char full_path[512];
+    snprintf(full_path, sizeof(full_path), "uploads/%s", decoded);
+
+    if (remove(full_path) != 0) {
+        send_text_response(client_fd, 404, "Not Found", "Failed to delete file");
+
+        return;
+    }
+
+    send_response(client_fd, 200, "OK", "application/json", "{\"success\": true}");
+}
+
 void route_request(int client_fd, HttpRequest* req, RawRequest* raw) {
     if (strcmp(req->path, "/") == 0) {
 
@@ -185,6 +210,9 @@ void route_request(int client_fd, HttpRequest* req, RawRequest* raw) {
     } else if (strcmp(req->path, "/api/files") == 0) {
 
         handle_files_api(client_fd);
+    } else if (strcmp(req->method, "DELETE") == 0 && strncmp(req->path, "/api/files/", 11) == 0) {
+
+        handle_delete_file(client_fd, req->path);
     } else {
         // for other webUI dependencies
         serve_static_file(client_fd, req->path);

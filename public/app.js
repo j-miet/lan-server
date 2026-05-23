@@ -25,6 +25,18 @@ dropZone.addEventListener("drop", (e) => {
 
 fileInput.addEventListener("change", () => uploadFiles(fileInput.files));
 
+async function deleteFile(file) {
+  const response = await fetch(`/api/files/${file}`, { method: "DELETE" });
+
+  if (!response.ok) {
+    alert("Delete failed");
+
+    return;
+  }
+
+  loadFiles();
+}
+
 /**
  * Get all uploaded server files and create WebUI entries with download links for each
  */
@@ -39,16 +51,22 @@ async function loadFiles() {
     const div = document.createElement("div");
 
     div.className = "file-entry";
-    div.innerHTML = `<a href="/download/${encodeURIComponent(file)}">
+    div.innerHTML = `
+        <a href="/download/${encodeURIComponent(file)}">
             ${file}
-        </a>`;
+        </a>
+        
+        <button onclick="deleteFile('${encodeURIComponent(file)}')">
+            Delete
+        </button>
+        `;
 
     fileList.appendChild(div);
   }
 }
 
 /**
- * uploading to server
+ * Uploads selected files (click or drag&drop) to server
  */
 async function uploadFiles(files) {
   for (const file of files) {
