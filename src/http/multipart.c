@@ -7,6 +7,23 @@
 
 #include "multipart.h"
 
+int get_boundary(const char* raw, char* boundary, int size) {
+    const char* header = strstr(raw, "boundary=");
+
+    if (!header)
+        return -1;
+
+    header += 9; // move at the end of "boundary="
+
+    int i = 0;
+    while (*header && *header != '\r' && *header != '\n' && i < size - 1)
+        boundary[i++] = *header++; // increment both index and pointer after allocation
+
+    boundary[i] = '\0';
+
+    return 0;
+}
+
 void trim_multipart_footer(const char* path, const char* boundary) {
     FILE* fp = fopen(path, "rb+");
 

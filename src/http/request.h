@@ -1,5 +1,5 @@
-#ifndef HTTP_H
-#define HTTP_H
+#ifndef REQUEST_H
+#define REQUEST_H
 
 typedef struct {
     char method[8];
@@ -10,8 +10,8 @@ typedef struct {
     long long content_length;
 } HttpRequest;
 
-int get_boundary(const char* raw, char* boundary, int size);
-long long get_content_length(const char* raw);
+int read_http_headers(int client_fd, char* buffer, int max_size);
 int parse_http_request(const char* raw, HttpRequest* req);
+long long get_content_length(const char* raw);
 
 #endif

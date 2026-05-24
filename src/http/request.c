@@ -1,23 +1,27 @@
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 
-#include "http.h"
+#include "request.h"
 
-int get_boundary(const char* raw, char* boundary, int size) {
-    const char* header = strstr(raw, "boundary=");
+int read_http_headers(int client_fd, char* buffer, int max_size) {
+    int total = 0;
 
-    if (!header)
-        return -1;
+    while (1) {
+        int received = recv(client_fd, buffer + total, max_size - total, 0);
 
-    header += 9; // move at the end of "boundary="
+        if (received <= 0)
+            return -1;
 
-    int i = 0;
-    while (*header && *header != '\r' && *header != '\n' && i < size - 1)
-        boundary[i++] = *header++; // increment both index and pointer after allocation
+        total += received;
 
-    boundary[i] = '\0';
+        buffer[total] = '\0';
 
-    return 0;
+        if (strstr(buffer, "\r\n\r\n"))
+            break;
+    }
+
+    return total;
 }
 
 long long get_content_length(const char* raw) {
