@@ -1,10 +1,12 @@
+#define _FILE_OFFSET_BITS 64
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "file.h"
 
-char* read_file(const char* path, int* size) {
+char* read_file(const char* path, long long* size) {
     FILE* file = fopen(path, "rb");
 
     if (!file)

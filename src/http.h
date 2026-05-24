@@ -7,11 +7,11 @@ typedef struct {
     char version[16];
 
     const char* body;
-    int content_length;
+    long long content_length;
 } HttpRequest;
 
 int get_boundary(const char* raw, char* boundary, int size);
-int get_content_length(const char* raw);
+long long get_content_length(const char* raw);
 int parse_http_request(const char* raw, HttpRequest* req);
 
 #endif

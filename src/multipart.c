@@ -1,52 +1,43 @@
+#define _FILE_OFFSET_BITS 64
 #define _GNU_SOURCE
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "multipart.h"
 
-static int extract_filename(const char* body, char* filename) {
-    const char* pos = strstr(body, "filename=\"");
+void trim_multipart_footer(const char* path, const char* boundary) {
+    FILE* fp = fopen(path, "rb+");
 
-    if (!pos)
-        return -1;
+    if (!fp)
+        return;
 
-    pos += 10;
+    fseek(fp, 0, SEEK_END);
 
-    int i = 0;
+    long file_size = ftell(fp);
+    long tail_size = file_size < 1024 ? file_size : 1024;
 
-    while (*pos && *pos != '"' && i < 255)
-        filename[i++] = *pos++;
+    fseek(fp, file_size - tail_size, SEEK_SET);
 
-    filename[i] = '\0';
+    char tail[1024];
+    fread(tail, 1, tail_size, fp);
 
-    return 0;
-}
+    char marker[512];
+    snprintf(marker, sizeof(marker), "\r\n--%s", boundary);
 
-int parse_multipart(const char* body, int body_size, const char* boundary, UploadedFile* file) {
-    if (extract_filename(body, file->filename) < 0)
-        return -1;
+    char* boundary_pos = strstr(tail, marker);
 
-    const char* data_start = strstr(body, "\r\n\r\n");
+    if (!boundary_pos) {
+        fclose(fp);
 
-    if (!data_start)
-        return -1;
+        return;
+    }
 
-    data_start += 4;
+    long new_size = file_size - (tail_size - (boundary_pos - tail));
 
-    char boundary_marker[256];
+    int fd = fileno(fp);
+    ftruncate(fd, new_size);
 
-    snprintf(boundary_marker, sizeof(boundary_marker), "\r\n--%s", boundary);
-
-    // multipart bodies are a mix of text+binary (can include \0 as data) so use Linux memmem instead
-    const char* data_end =
-        memmem(data_start, body_size - (data_start - body), boundary_marker, strlen(boundary_marker));
-
-    if (!data_end)
-        return -1;
-
-    file->data = data_start;
-    file->size = data_end - data_start;
-
-    return 0;
+    fclose(fp);
 }

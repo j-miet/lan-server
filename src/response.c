@@ -37,13 +37,13 @@ void send_redirect_response(int client_fd, const char* location) {
     send(client_fd, response, length, 0);
 }
 
-void send_file_response(int client_fd, const char* content_type, const char* data, int size) {
+void send_file_response(int client_fd, const char* content_type, const char* data, long long size) {
     char header[1024];
 
     int header_length = snprintf(header, sizeof(header),
                                  "HTTP/1.1 200 OK\r\n"
                                  "Content-Type: %s\r\n"
-                                 "Content-Length: %d\r\n"
+                                 "Content-Length: %lld\r\n"
                                  "\r\n",
                                  content_type, size);
 

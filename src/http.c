@@ -20,15 +20,15 @@ int get_boundary(const char* raw, char* boundary, int size) {
     return 0;
 }
 
-int get_content_length(const char* raw) {
+long long get_content_length(const char* raw) {
     const char* header = strstr(raw, "Content-Length");
 
     if (!header)
         return 0;
 
-    int length = 0;
+    long long length = 0;
 
-    sscanf(header, "Content-Length: %d", &length);
+    sscanf(header, "Content-Length: %lld", &length);
 
     return length;
 }
