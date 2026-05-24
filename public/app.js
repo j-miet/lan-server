@@ -1,4 +1,5 @@
 const dropZone = document.getElementById("drop-zone");
+const progressBar = document.getElementById("progress-bar");
 const fileInput = document.getElementById("file-input");
 const fileList = document.getElementById("file-list");
 
@@ -66,22 +67,52 @@ async function loadFiles() {
 }
 
 /**
- * Uploads selected files (click or drag&drop) to server
+ * Handles a single file upload with progress bar updates
  */
-async function uploadFiles(files) {
-  for (const file of files) {
+async function uploadFile(file) {
+  return new Promise((resolve, reject) => {
     const formData = new FormData();
 
     formData.append("file", file);
 
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
+    const xhr = new XMLHttpRequest();
+
+    xhr.open("POST", "/api/upload");
+
+    xhr.upload.addEventListener("progress", (e) => {
+      if (!e.lengthComputable) return;
+
+      const pct = (e.loaded / e.total) * 100;
+
+      progressBar.style.width = pct + "%";
     });
 
-    if (!response.ok) {
+    xhr.addEventListener("load", () => {
+      progressBar.style.width = "100%";
+
+      setTimeout(() => {
+        progressBar.style.width = "0%";
+      }, 500);
+
+      resolve();
+    });
+
+    xhr.addEventListener("error", () => {
       alert("Upload failed: " + file.name);
-    }
+
+      reject();
+    });
+
+    xhr.send(formData);
+  });
+}
+
+/**
+ * Uploads selected files (click or drag&drop) to server
+ */
+async function uploadFiles(files) {
+  for (const file of files) {
+    await uploadFile(file);
   }
 
   loadFiles();

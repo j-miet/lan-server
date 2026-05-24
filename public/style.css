@@ -24,6 +24,22 @@ body {
     background: #ddd;
 }
 
+#progress-container {
+    width: 100px;
+    height: 25px;
+    background: #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+#progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #4caf50;
+    transition: width 0.1s;
+}
+
 .file-entry {
     display: flex;
     padding: 10px;
