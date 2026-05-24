@@ -4,33 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "file.h"
+#include "mime.h"
 
-char* read_file(const char* path, long long* size) {
-    FILE* file = fopen(path, "rb");
-
-    if (!file)
-        return NULL;
-
-    fseek(file, 0, SEEK_END);
-    *size = ftell(file);
-    rewind(file);
-
-    char* buffer = malloc(*size);
-
-    if (!buffer) {
-        fclose(file);
-        return NULL;
-    }
-
-    fread(buffer, 1, *size, file);
-
-    fclose(file);
-
-    return buffer;
-}
-
-const char* get_context_type(const char* path) {
+const char* get_content_type(const char* path) {
     const char* ext = strrchr(path, '.'); // file extension
 
     if (!ext)

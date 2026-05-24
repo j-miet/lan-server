@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../filesystem/file.h"
+#include "../filesystem/mime.h"
 #include "../filesystem/sanitize.h"
 #include "../filesystem/url.h"
 #include "../http/request.h"
@@ -61,7 +61,7 @@ void handle_download(int client_fd, const char* path) {
     char full_path[512];
     snprintf(full_path, sizeof(full_path), "uploads/%s", decoded);
 
-    const char* content_type = get_context_type(full_path);
+    const char* content_type = get_content_type(full_path);
 
     send_file_stream(client_fd, full_path, content_type);
 }
@@ -102,7 +102,7 @@ void serve_static_file(int client_fd, const char* path) {
 
     snprintf(full_path, sizeof(full_path), "public%s", path);
 
-    const char* content_type = get_context_type(full_path);
+    const char* content_type = get_content_type(full_path);
 
     send_file_stream(client_fd, full_path, content_type);
 }
