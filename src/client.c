@@ -1,18 +1,9 @@
-#include <dirent.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 
-#include "api/files_api.h"
 #include "api/upload_api.h"
 #include "client.h"
-#include "filesystem/file.h"
-#include "filesystem/sanitize.h"
-#include "filesystem/url.h"
-#include "http/multipart.h"
-#include "http/request.h"
-#include "http/response.h"
+
 #include "http/routing.h"
 
 void handle_client(int client_fd) {
