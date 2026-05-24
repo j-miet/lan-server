@@ -24,13 +24,27 @@ body {
     background: #ddd;
 }
 
+#upload-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+#upload-file-name {
+    min-width: 200px;
+    color: orange;
+    font-size: 14px;
+    font-weight: bold;
+    word-break: break-all;
+}
+
 #progress-container {
     width: 100px;
     height: 25px;
     background: #ddd;
     border-radius: 5px;
     overflow: hidden;
-    margin-bottom: 20px;
 }
 
 #progress-bar {

@@ -1,5 +1,6 @@
 const dropZone = document.getElementById("drop-zone");
 const progressBar = document.getElementById("progress-bar");
+const uploadFileName = document.getElementById("upload-file-name");
 const fileInput = document.getElementById("file-input");
 const fileList = document.getElementById("file-list");
 
@@ -76,8 +77,9 @@ async function uploadFile(file) {
     formData.append("file", file);
 
     const xhr = new XMLHttpRequest();
-
     xhr.open("POST", "/api/upload");
+
+    uploadFileName.innerHTML = file.name;
 
     xhr.upload.addEventListener("progress", (e) => {
       if (!e.lengthComputable) return;
@@ -92,6 +94,7 @@ async function uploadFile(file) {
 
       setTimeout(() => {
         progressBar.style.width = "0%";
+        uploadFileName.innerHTML = "";
       }, 500);
 
       resolve();
