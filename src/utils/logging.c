@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "utils.h"
+#include "logging.h"
 
 void log_info(const char* msg) {
     printf("[INFO] %s\n", msg);
