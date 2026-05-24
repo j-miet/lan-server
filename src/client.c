@@ -52,19 +52,9 @@ void serve_static_file(int client_fd, const char* path) {
 
     snprintf(full_path, sizeof(full_path), "public%s", path);
 
-    long long size;
-    char* data = read_file(full_path, &size);
-
-    if (!data) {
-        send_text_response(client_fd, 404, "Not Found", "404 Not Found");
-        return;
-    }
-
     const char* content_type = get_context_type(full_path);
 
-    send_file_response(client_fd, content_type, data, size);
-
-    free(data); // empty the buffer whicn was dynamically allocated in read_file
+    send_file_stream(client_fd, full_path, content_type);
 }
 
 void serve_text(int client_fd, const char* msg) {
@@ -209,20 +199,9 @@ void handle_download(int client_fd, const char* path) {
     char full_path[512];
     snprintf(full_path, sizeof(full_path), "uploads/%s", decoded);
 
-    long long size;
-    char* data = read_file(full_path, &size);
-
-    if (!data) {
-        send_text_response(client_fd, 404, "Not Found", "File not found");
-
-        return;
-    }
-
     const char* content_type = get_context_type(full_path);
 
-    send_file_response(client_fd, content_type, data, size);
-
-    free(data);
+    send_file_stream(client_fd, full_path, content_type);
 }
 
 void handle_delete_file(int client_fd, const char* path) {
