@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -g
 
-SRC=$(wildcard src/*.c)
+SRC=$(wildcard src/*.c src/**/*.c)
 OUT=bin/lan-server
 
 build:
