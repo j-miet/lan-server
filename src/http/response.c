@@ -25,6 +25,44 @@ void send_response(int client_fd, int status_code, const char* status_text, cons
     send(client_fd, response, response_length, 0);
 }
 
+void send_redirect(int client_fd, const char* location) {
+    char response[512];
+    int response_length = snprintf(response, sizeof(response),
+                                   "HTTP/1.1 302 Found\r\n"
+                                   "Location: %s\r\n"
+                                   "Content-Length: 0\r\n"
+                                   "\r\n",
+                                   location);
+
+    send(client_fd, response, response_length, 0);
+}
+
+void send_response_with_cookie(int client_fd, const char* token) {
+    char response[1024];
+
+    int response_length = snprintf(response, sizeof(response),
+                                   "HTTP/1.1 200 OK\r\n"
+                                   "Content-Type: application/json\r\n"
+                                   "Set-Cookie: token=%s; HttpOnly; Path=/\r\n"
+                                   "Content-Length: 2\r\n"
+                                   "\r\n"
+                                   "{}",
+                                   token);
+
+    send(client_fd, response, response_length, 0);
+}
+
+void send_response_clear_cookie(int client_fd) {
+    char response[512];
+    int response_length = snprintf(response, sizeof(response),
+                                   "HTTP/1.1 200 OK\r\n"
+                                   "Set-Cookie: token=; HttpOnly; Path=/; Max-Age=0\r\n"
+                                   "Content-Length: 0\r\n"
+                                   "\r\n");
+
+    send(client_fd, response, response_length, 0);
+}
+
 void send_file_stream(int client_fd, const char* path, const char* content_type) {
     FILE* file = fopen(path, "rb");
 

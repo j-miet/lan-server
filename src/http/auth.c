@@ -5,34 +5,35 @@
 #include "../config.h"
 #include "context.h"
 
-static const char* find_authorization_header(const char* headers) {
-    const char* auth = strstr(headers, "Authorization");
+static const char* find_cookie_header(const char* headers) {
+    const char* cookie = strstr(headers, "Cookie:");
 
-    if (!auth)
+    if (!cookie)
         return NULL;
 
-    return auth;
+    return cookie;
 }
 
 int authenticate_request(RequestContext* ctx) {
-    const char* auth = find_authorization_header(ctx->raw_headers);
+    const char* cookie = find_cookie_header(ctx->raw_headers);
 
-    if (!auth)
+    if (!cookie)
         return 0;
 
-    const char* bearer = strstr(auth, "Bearer "); // find bearer token
+    const char* t = strstr(cookie, "token=");
 
-    if (!bearer)
+    if (!t)
         return 0;
 
-    bearer += 7;
+    t += 6;
 
     // token extraction
     char token[256];
     int i = 0;
 
-    while (bearer[i] && bearer[i] != '\r' && bearer[i] != '\n' && i < (int)sizeof(token) - 1) {
-        token[i] = bearer[i];
+    // cookies also include semicolons to separate HttpOnly and Path
+    while (t[i] && t[i] != ';' && t[i] != '\r' && t[i] != '\n' && i < (int)sizeof(token) - 1) {
+        token[i] = t[i];
         i++;
     }
 
@@ -45,4 +46,22 @@ int authenticate_request(RequestContext* ctx) {
     }
 
     return 0;
+}
+
+int authenticate_login(RequestContext* ctx) {
+    if (!ctx->req->body)
+        return 0;
+
+    char token[256];
+    int i = 0;
+    const char* t = ctx->req->body;
+
+    while (t[i] && t[i] != ';' && t[i] != '\r' && t[i] != '\n' && i < (int)sizeof(token) - 1) {
+        token[i] = t[i];
+        i++;
+    }
+
+    token[i] = '\0';
+
+    return strcmp(token, g_config.token) == 0;
 }

@@ -6,28 +6,15 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <!-- When path server user the index page e.g. connecting to "/", html loads before javascript before redirecting back to login. This would cause an annoying flash of index page before redirecting. The fix is to hide body element until auth check-->
-    <style>
-      body {
-        visibility: hidden;
-      }
-    </style>
-    <script>
-      if (localStorage.getItem("token")) {
-        document.body.style.visibility = "visible";
-      } else {
-        window.location.replace("/login.html");
-      }
-    </script>
-
     <div class="container">
       <h1>LAN Server</h1>
 
       <div style="position: fixed; top: 16px; right: 24px">
         <button
           onclick="
-            localStorage.removeItem('token');
-            window.location.replace('/login.html');
+            fetch('/api/logout', { method: 'POST' }).then(() =>
+              window.location.replace('/login.html'),
+            )
           "
         >
           Logout

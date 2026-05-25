@@ -1,7 +1,5 @@
 "use strict";
 
-import { getAuthHeaders, handleAuthFailure } from "./auth.js";
-
 const dropZone = document.getElementById("drop-zone");
 const progressBar = document.getElementById("progress-bar");
 const uploadFileName = document.getElementById("upload-file-name");
@@ -34,32 +32,18 @@ fileInput.addEventListener("change", () => uploadFiles(fileInput.files));
 /**
  * Download a file from server
  */
-function downloadFile(file) {
-  fetch(`/download/${encodeURIComponent(file)}`, {
-    headers: getAuthHeaders(),
-  })
-    .then((r) => r.blob())
-    .then((blob) => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-
-      a.href = url;
-      a.download = file;
-
-      a.click();
-    });
+async function downloadFile(file) {
+  const a = document.createElement("a");
+  a.href = `/download/${encodeURIComponent(file)}`;
+  a.download = file;
+  a.click();
 }
 
 /**
  * Delete a uploaded server file
  */
 async function deleteFile(file) {
-  const response = await fetch(`/api/files/${file}`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-
-  if (handleAuthFailure(response)) return;
+  const response = await fetch(`/api/files/${file}`, { method: "DELETE" });
 
   loadFiles();
 }
@@ -68,12 +52,9 @@ async function deleteFile(file) {
  * Get all uploaded server files and create WebUI entries with download links for each
  */
 async function loadFiles() {
-  const response = await fetch("/api/files", {
-    headers: getAuthHeaders(),
-  });
+  const response = await fetch("/api/files");
 
   if (!response.ok) {
-    if (handleAuthFailure(response)) return;
     alert("Request failed");
     return;
   }
@@ -113,10 +94,6 @@ async function uploadFile(file) {
     const xhr = new XMLHttpRequest();
 
     xhr.open("POST", "/api/upload");
-    xhr.setRequestHeader(
-      "Authorization",
-      "Bearer " + localStorage.getItem("token"),
-    );
 
     uploadFileName.innerHTML = file.name;
 
@@ -129,12 +106,6 @@ async function uploadFile(file) {
     });
 
     xhr.addEventListener("load", () => {
-      if (xhr.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/login.html";
-        return;
-      }
-
       progressBar.style.width = "100%";
 
       setTimeout(() => {

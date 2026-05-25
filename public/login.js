@@ -10,8 +10,9 @@ async function login() {
   }
 
   try {
-    const response = await fetch("/auth/verify", {
-      headers: { Authorization: "Bearer " + token },
+    const response = await fetch("/api/login", {
+      method: "POST",
+      body: token,
     });
 
     if (!response.ok) {
@@ -23,6 +24,5 @@ async function login() {
     return;
   }
 
-  localStorage.setItem("token", token);
   window.location.replace("/index.html");
 }

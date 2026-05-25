@@ -1,14 +1,14 @@
+#include <stdio.h>
 #include <string.h>
 
 #include "../api/files_api.h"
 #include "../api/upload_api.h"
+#include "../config.h"
 #include "../utils/addr.h"
 #include "auth.h"
 #include "context.h"
 #include "response.h"
 #include "routing.h"
-
-#include <stdio.h>
 
 void route_request(RequestContext* ctx) {
 
@@ -17,6 +17,11 @@ void route_request(RequestContext* ctx) {
 
     // public routes
     if (strcmp(path, "/") == 0) {
+        if (!authenticate_request(ctx)) {
+            send_redirect(ctx->client_fd, "/login.html");
+            return;
+        }
+
         serve_static_file(ctx->client_fd, "/index.html");
         return;
     }
@@ -26,24 +31,36 @@ void route_request(RequestContext* ctx) {
         return;
     }
 
-    // auth routes
-    // login
-    if (strcmp(path, "/auth/verify") == 0) {
-        printf("=> Login request from %s\n", get_client_ip(ctx->client_fd));
-        if (!authenticate_request(ctx)) {
-            printf("=> Login failed\n");
+    // login/logout
+    if (strcmp(ctx->req->method, "POST") == 0 && strcmp(path, "/api/login") == 0) {
+        if (!authenticate_login(ctx)) {
+            fprintf(stderr, "=> Login failed from %s\n", get_client_ip(ctx->client_fd));
             send_response(ctx->client_fd, 401, "Unauthorized", "application/json", "{\"error\":\"Unauthorized\"}");
             return;
         }
+        fprintf(stderr, "=> Login successful from %s\n", get_client_ip(ctx->client_fd));
+        send_response_with_cookie(ctx->client_fd, g_config.token);
+        return;
+    }
 
-        send_response(ctx->client_fd, 200, "OK", "application/json", "login succesful");
-        printf("=> Login succesful\n");
+    if (strcmp(path, "/api/logout") == 0) {
+        send_response_clear_cookie(ctx->client_fd);
+        return;
+    }
+
+    // auth routes
+    if (strcmp(path, "/index.html") == 0) {
+        if (!authenticate_request(ctx)) {
+            send_redirect(ctx->client_fd, "/login.html");
+            return;
+        }
+        serve_static_file(ctx->client_fd, "/index.html");
+        return;
     }
 
     if (strncmp(path, "/download/", 10) == 0) {
 
         if (!authenticate_request(ctx)) {
-            printf("=> Login failed\n");
             send_response(ctx->client_fd, 401, "Unauthorized", "application/json", "{\"error\":\"Unauthorized\"}");
             return;
         }
