@@ -1,33 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>LAN Server</title>
-    <link rel="stylesheet" href="/style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <!-- When path server user the index page e.g. connecting to "/", html loads before javascript before redirecting back to login. This would cause an annoying flash of index page before redirecting. The fix is to hide body element until auth check-->
+    <style>
+      body {
+        visibility: hidden;
+      }
+    </style>
+    <script>
+      if (localStorage.getItem("token")) {
+        document.body.style.visibility = "visible";
+      } else {
+        window.location.replace("/login.html");
+      }
+    </script>
+
     <div class="container">
-        <h1>LAN Server</h1>
-        <div id="drop-zone">
-            Drag files here for uploading
+      <h1>LAN Server</h1>
+
+      <div style="position: fixed; top: 16px; right: 24px">
+        <button
+          onclick="
+            localStorage.removeItem('token');
+            window.location.replace('/login.html');
+          "
+        >
+          Logout
+        </button>
+      </div>
+
+      <div id="drop-zone">Drag files here for uploading</div>
+
+      <div id="upload-status">
+        <div id="progress-container">
+          <div id="progress-bar"></div>
         </div>
 
-        <div id="upload-status">
-             <div id="progress-container">
-                <div id="progress-bar"></div>
-            </div>
+        <span id="upload-file-name"></span>
+      </div>
 
-            <span id="upload-file-name"></span>
-        </div>
+      <input type="file" id="file-input" hidden />
 
-        <input type="file" id="file-input" hidden>
-
-        <h2>Files</h2>
-        <div id="file-list">
-            Loading...
-        </div>
+      <h2>Files</h2>
+      <div id="file-list">Loading...</div>
     </div>
 
-    <script src="/app.js"></script>
-</body>
+    <script type="module" src="/app.js"></script>
+  </body>
 </html>

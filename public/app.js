@@ -1,10 +1,14 @@
+"use strict";
+
+import { getAuthHeaders, handleAuthFailure } from "./auth.js";
+
 const dropZone = document.getElementById("drop-zone");
 const progressBar = document.getElementById("progress-bar");
 const uploadFileName = document.getElementById("upload-file-name");
 const fileInput = document.getElementById("file-input");
 const fileList = document.getElementById("file-list");
 
-// file drag & drop handlers: these call hidden input element
+// file drag & drop handlers: these utilize a hidden input element
 dropZone.addEventListener("click", () => fileInput.click());
 
 dropZone.addEventListener("dragover", (e) => {
@@ -27,14 +31,35 @@ dropZone.addEventListener("drop", (e) => {
 
 fileInput.addEventListener("change", () => uploadFiles(fileInput.files));
 
+/**
+ * Download a file from server
+ */
+function downloadFile(file) {
+  fetch(`/download/${file}`, {
+    headers: getAuthHeaders(),
+  })
+    .then((r) => r.blob())
+    .then((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = file;
+
+      a.click();
+    });
+}
+
+/**
+ * Delete a uploaded server file
+ */
 async function deleteFile(file) {
-  const response = await fetch(`/api/files/${file}`, { method: "DELETE" });
+  const response = await fetch(`/api/files/${file}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
 
-  if (!response.ok) {
-    alert("Delete failed");
-
-    return;
-  }
+  if (handleAuthFailure(response)) return;
 
   loadFiles();
 }
@@ -43,7 +68,15 @@ async function deleteFile(file) {
  * Get all uploaded server files and create WebUI entries with download links for each
  */
 async function loadFiles() {
-  const response = await fetch("/api/files");
+  const response = await fetch("/api/files", {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    if (handleAuthFailure(response)) return;
+    alert("Request failed");
+    return;
+  }
 
   const files = await response.json();
 
@@ -54,7 +87,7 @@ async function loadFiles() {
 
     div.className = "file-entry";
     div.innerHTML = `
-        <a href="/download/${encodeURIComponent(file)}">
+        <a onclick="downloadFile('${encodeURIComponent(file)}')" style="cursor:pointer">
             ${file}
         </a>
         
@@ -77,7 +110,12 @@ async function uploadFile(file) {
     formData.append("file", file);
 
     const xhr = new XMLHttpRequest();
+
     xhr.open("POST", "/api/upload");
+    xhr.setRequestHeader(
+      "Authorization",
+      "Bearer " + localStorage.getItem("token"),
+    );
 
     uploadFileName.innerHTML = file.name;
 
@@ -90,6 +128,12 @@ async function uploadFile(file) {
     });
 
     xhr.addEventListener("load", () => {
+      if (xhr.status === 401) {
+        localStorage.removeItem("token");
+        window.location.href = "/login.html";
+        return;
+      }
+
       progressBar.style.width = "100%";
 
       setTimeout(() => {
@@ -111,7 +155,7 @@ async function uploadFile(file) {
 }
 
 /**
- * Uploads selected files (click or drag&drop) to server
+ * Uploads selected files to server
  */
 async function uploadFiles(files) {
   for (const file of files) {
@@ -120,5 +164,10 @@ async function uploadFiles(files) {
 
   loadFiles();
 }
+
+// app.js is loaded as type="module" in index.html, making it scoped. To properly call functions into innerHtml,
+// they are attached to window element after declaration
+window.downloadFile = downloadFile;
+window.deleteFile = deleteFile;
 
 loadFiles();
