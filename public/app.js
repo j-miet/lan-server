@@ -35,7 +35,7 @@ fileInput.addEventListener("change", () => uploadFiles(fileInput.files));
  * Download a file from server
  */
 function downloadFile(file) {
-  fetch(`/download/${file}`, {
+  fetch(`/download/${encodeURIComponent(file)}`, {
     headers: getAuthHeaders(),
   })
     .then((r) => r.blob())
@@ -84,18 +84,19 @@ async function loadFiles() {
 
   for (const file of files) {
     const div = document.createElement("div");
-
     div.className = "file-entry";
-    div.innerHTML = `
-        <a onclick="downloadFile('${encodeURIComponent(file)}')" style="cursor:pointer">
-            ${file}
-        </a>
-        
-        <button onclick="deleteFile('${encodeURIComponent(file)}')">
-            Delete
-        </button>
-        `;
 
+    const a = document.createElement("a");
+    a.textContent = file;
+    a.style.cursor = "pointer";
+    a.addEventListener("click", () => downloadFile(file));
+
+    const btn = document.createElement("button");
+    btn.textContent = "Delete";
+    btn.addEventListener("click", () => deleteFile(file));
+
+    div.appendChild(a);
+    div.appendChild(btn);
     fileList.appendChild(div);
   }
 }
@@ -164,10 +165,5 @@ async function uploadFiles(files) {
 
   loadFiles();
 }
-
-// app.js is loaded as type="module" in index.html, making it scoped. To properly call functions into innerHtml,
-// they are attached to window element after declaration
-window.downloadFile = downloadFile;
-window.deleteFile = deleteFile;
 
 loadFiles();
