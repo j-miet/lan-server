@@ -3,12 +3,12 @@
 
 #include "api/upload_api.h"
 #include "client.h"
-
 #include "http/routing.h"
 
 void handle_client(int client_fd) {
-    char header_buffer[16384];
+    printf("-- New Request --\n");
 
+    char header_buffer[16384];
     int header_size = read_http_headers(client_fd, header_buffer, sizeof(header_buffer) - 1);
 
     if (header_size < 0)
@@ -25,12 +25,8 @@ void handle_client(int client_fd) {
     printf("Path: %s\n", req.path);
     printf("Version: %s\n", req.version);
 
-    // handle file uploads separately
-    if (strcmp(req.method, "POST") == 0 && strcmp(req.path, "/api/upload") == 0) {
-        handle_stream_upload(client_fd, &req, header_buffer, header_size);
-        return;
-    }
+    RequestContext ctx = {
+        .client_fd = client_fd, .req = &req, .raw_headers = header_buffer, .header_size = header_size};
 
-    // otherwise pass to router
-    route_request(client_fd, &req);
+    route_request(&ctx);
 }

@@ -8,6 +8,7 @@ typedef struct {
 
     const char* body;
     long long content_length;
+
 } HttpRequest;
 
 int read_http_headers(int client_fd, char* buffer, int max_size);
