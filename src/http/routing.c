@@ -2,30 +2,82 @@
 
 #include "../api/files_api.h"
 #include "../api/upload_api.h"
+#include "../utils/addr.h"
+#include "auth.h"
 #include "context.h"
+#include "response.h"
 #include "routing.h"
 
+#include <stdio.h>
+
 void route_request(RequestContext* ctx) {
-    if (strcmp(ctx->req->path, "/") == 0) {
 
+    const char* path = ctx->req->path;
+    fprintf(stderr, "Address: %s\n", get_client_ip(ctx->client_fd));
+
+    // public routes
+    if (strcmp(path, "/") == 0) {
         serve_static_file(ctx->client_fd, "/index.html");
-    } else if (strcmp(ctx->req->path, "/hello") == 0) {
-
-        serve_text(ctx->client_fd, "Hello from server!");
-    } else if (strncmp(ctx->req->path, "/download/", 10) == 0) {
-
-        handle_download(ctx->client_fd, ctx->req->path);
-    } else if (strcmp(ctx->req->path, "/api/files") == 0) {
-
-        handle_files_api(ctx->client_fd);
-    } else if (strcmp(ctx->req->method, "POST") == 0 && strcmp(ctx->req->path, "/api/upload") == 0) {
-
-        handle_stream_upload(ctx->client_fd, ctx->req, ctx->raw_headers, ctx->header_size);
-    } else if (strcmp(ctx->req->method, "DELETE") == 0 && strncmp(ctx->req->path, "/api/files/", 11) == 0) {
-
-        handle_delete_file(ctx->client_fd, ctx->req->path);
-    } else {
-        // for other webUI dependencies
-        serve_static_file(ctx->client_fd, ctx->req->path);
+        return;
     }
+
+    if (strcmp(path, "/hello") == 0) {
+        serve_text(ctx->client_fd, "Hello from server!");
+        return;
+    }
+
+    // auth routes
+    // login
+    if (strcmp(path, "/auth/verify") == 0) {
+        printf("=> Login request from %s\n", get_client_ip(ctx->client_fd));
+        if (!authenticate_request(ctx)) {
+            printf("=> Login failed\n");
+            send_response(ctx->client_fd, 401, "Unauthorized", "application/json", "{\"error\":\"Unauthorized\"}");
+            return;
+        }
+
+        send_response(ctx->client_fd, 200, "OK", "application/json", "login succesful");
+        printf("=> Login succesful\n");
+    }
+
+    if (strncmp(path, "/download/", 10) == 0) {
+
+        if (!authenticate_request(ctx)) {
+            printf("=> Login failed\n");
+            send_response(ctx->client_fd, 401, "Unauthorized", "application/json", "{\"error\":\"Unauthorized\"}");
+            return;
+        }
+
+        handle_download(ctx->client_fd, path);
+        return;
+    }
+
+    // api
+    if (strncmp(path, "/api/", 5) == 0) {
+
+        if (!authenticate_request(ctx)) {
+            send_response(ctx->client_fd, 401, "Unauthorized", "application/json", "{\"error\":\"Unauthorized\"}");
+            return;
+        }
+
+        if (strcmp(path, "/api/files") == 0) {
+            handle_files_api(ctx->client_fd);
+            return;
+        }
+
+        if (strcmp(ctx->req->method, "POST") == 0 && strcmp(path, "/api/upload") == 0) {
+
+            handle_stream_upload(ctx->client_fd, ctx->req, ctx->raw_headers, ctx->header_size);
+            return;
+        }
+
+        if (strcmp(ctx->req->method, "DELETE") == 0 && strncmp(path, "/api/files/", 11) == 0) {
+
+            handle_delete_file(ctx->client_fd, path);
+            return;
+        }
+    }
+
+    // general end point (e.g. public css & js files)
+    serve_static_file(ctx->client_fd, path);
 }

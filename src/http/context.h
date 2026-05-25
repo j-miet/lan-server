@@ -10,6 +10,8 @@ typedef struct {
 
     const char* raw_headers;
     int header_size;
+
+    int authenticated;
 } RequestContext;
 
 #endif
