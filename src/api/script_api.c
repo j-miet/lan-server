@@ -8,6 +8,10 @@
 #include "../scripting/jobs.h"
 #include "../scripting/scripts.h"
 
+#define ESCAPED_BUF (MAX_OUTPUT * 2)
+#define JSON_OVERHEAD 64
+#define JSON_BUF (ESCAPED_BUF + JSON_OVERHEAD)
+
 // list all scripts here
 ScriptEntry scripts[] = {{"test", "./scripts/test.sh"}, {NULL, NULL}};
 
@@ -70,10 +74,10 @@ void handle_job_status(int client_fd, const char* path) {
         status = "failed";
 
     // apply json escaping
-    char escaped[sizeof(job->output) * 2]; // double the output size + json overhead
+    char escaped[ESCAPED_BUF]; // double the output size to make room for escapes characters
     json_escape(job->output, escaped, sizeof(escaped));
 
-    char json[sizeof(escaped) + 64];
+    char json[JSON_BUF]; // add json overhead
     snprintf(json, sizeof(json),
              "{"
              "\"id\":%d,"
