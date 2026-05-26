@@ -145,7 +145,13 @@ async function runScript(name) {
 
   const result = await response.json();
 
-  alert(`Script finished with code ${result.exit_code}`);
+  const outputElem = document.getElementById("script-output");
+  outputElem.textContent +=
+    `\n$ ${name}\n\n` + result.output + `\nExit code: ${result.exit_code}\n`;
+
+  // auto-scroll to bottom
+  const terminal = document.getElementById("terminal-container");
+  terminal.scrollTop = terminal.scrollHeight;
 }
 
 window.runScript = runScript;

@@ -12,6 +12,21 @@ body {
   border-radius: 10px;
 }
 
+#terminal-container {
+  height: 300px;
+  overflow-y: auto;
+  background: #111;
+  color: #0f0;
+  padding: 12px 12px 12px 12px;
+  border-radius: 8px;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+#script-output {
+  margin: 0;
+}
+
 .script-container {
   gap: 12px;
   margin-bottom: 20px;
