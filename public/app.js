@@ -137,4 +137,17 @@ async function uploadFiles(files) {
   loadFiles();
 }
 
+/**
+ * Execute server-side script
+ */
+async function runScript(name) {
+  const response = await fetch(`/api/scripts/${name}`, { method: "POST" });
+
+  const result = await response.json();
+
+  alert(`Script finished with code ${result.exit_code}`);
+}
+
+window.runScript = runScript;
+
 loadFiles();

@@ -12,6 +12,11 @@ body {
   border-radius: 10px;
 }
 
+.script-container {
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
 #drop-zone {
   border: 3px dashed white;
   padding: 40px;

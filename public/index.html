@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <title>LAN Server</title>
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.png" />
   </head>
   <body>
     <div class="container">
@@ -19,6 +20,12 @@
         >
           Logout
         </button>
+      </div>
+
+      <div class="script-container">
+        <h2>Scripts</h2>
+        <button onclick="runScript('test')">Print hello</button>
+        <hr style="height: 2px; background-color: #333" />
       </div>
 
       <div id="drop-zone">Drag files here for uploading</div>
