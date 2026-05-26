@@ -1,10 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../api/files_api.h"
+#include "../api/script_api.h"
 #include "../api/upload_api.h"
 #include "../config.h"
-#include "../scripts/scripts.h"
 #include "../utils/addr.h"
 #include "auth.h"
 #include "context.h"
@@ -22,6 +23,7 @@ static Route routes[] = {{"GET", "/", 0, 0, routing_root},
                          {"POST", "/api/upload", 0, 1, routing_upload},
                          {"DELETE", "/api/files", 1, 1, routing_delete},
                          {"POST", "/api/scripts", 1, 1, routing_script_execute},
+                         {"GET", "/api/jobs", 1, 1, routing_job_status},
                          {NULL, NULL, 0, 0, NULL}};
 
 static int match_route(Route* r, RequestContext* ctx) {
@@ -120,4 +122,8 @@ void routing_delete(RequestContext* ctx) {
 
 void routing_script_execute(RequestContext* ctx) {
     handle_script_execute(ctx->client_fd, ctx->req->path);
+}
+
+void routing_job_status(RequestContext* ctx) {
+    handle_job_status(ctx->client_fd, ctx->req->path);
 }

@@ -8,6 +8,4 @@ typedef struct {
 
 extern ScriptEntry scripts[];
 
-void handle_script_execute(int client_fd, const char* path);
-
 #endif

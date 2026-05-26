@@ -20,11 +20,18 @@ body {
   padding: 12px 12px 12px 12px;
   border-radius: 8px;
   font-family: monospace;
-  white-space: pre-wrap;
 }
 
 #script-output {
   margin: 0;
+}
+
+.job-output {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #333;
+  white-space: pre-wrap;
+  font-family: monospace;
 }
 
 .script-container {

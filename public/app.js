@@ -149,28 +149,58 @@ async function uploadFiles(files) {
 
 /**
  * Execute a server-side script
+ * Server can run each script as a separate job via threading
  */
 async function runScript(name) {
   const outputElem = document.getElementById("script-output");
   const terminal = document.getElementById("terminal-container");
 
-  outputElem.textContent += `\n[${getTimestamp()}] $ ${name}\n[ RUNNING ]\n`;
+  // create job element
+  const jobElem = document.createElement("div");
+  jobElem.className = "job-output";
+  outputElem.appendChild(jobElem);
+
+  const startedAt = getTimestamp();
+  jobElem.textContent = `[${startedAt}] $ ${name}\n`;
 
   terminal.scrollTop = terminal.scrollHeight;
 
   try {
     const response = await fetch(`/api/scripts/${name}`, { method: "POST" });
-    const result = await response.json();
-    const status = result.exit_code === 0 ? "[ SUCCESS ]" : "[ FAILED ]";
+    const job = await response.json();
 
-    outputElem.textContent += result.output + `\n${status}\n`;
+    jobElem.textContent += `[ JOB ${job.job_id} STARTED ]\n`;
+    terminal.scrollTop = terminal.scrollHeight;
+
+    // poll script updates via job id
+    while (true) {
+      const res = await fetch(`/api/jobs/${job.job_id}`);
+      const data = await res.json();
+
+      jobElem.textContent =
+        `[${startedAt}] $ ${name}\n` +
+        `[ JOB ${job.job_id} ]\n\n` +
+        data.output;
+
+      terminal.scrollTop = terminal.scrollHeight;
+
+      if (data.status === "completed" || data.status === "failed") {
+        const status =
+          data.status === "completed" ? "[ SUCCESS ]" : "[ FAILED ]";
+
+        jobElem.textContent += `\n${status}\n`;
+        jobElem.textContent += "\n--------------------------------\n";
+
+        break;
+      }
+
+      await new Promise((r) => setTimeout(r, 500)); // polling delay
+    }
   } catch (err) {
-    outputElem.textContent += `\n[ FAILED ] ${err}\n`;
+    jobElem.textContent += `\n[ FAILED ] ${err}\n`;
   }
 
-  outputElem.textContent += "\n--------------------------------\n"; // separator
-
-  terminal.scrollTop = terminal.scrollHeight; // auto-scroll to bottom
+  terminal.scrollTop = terminal.scrollHeight;
 }
 
 window.runScript = runScript;

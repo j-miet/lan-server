@@ -23,6 +23,7 @@ void routing_files(RequestContext* ctx);
 void routing_upload(RequestContext* ctx);
 void routing_delete(RequestContext* ctx);
 void routing_script_execute(RequestContext* ctx);
+void routing_job_status(RequestContext* ctx);
 
 void route_request(RequestContext* ctx);
 
