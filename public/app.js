@@ -30,6 +30,16 @@ dropZone.addEventListener("drop", (e) => {
 fileInput.addEventListener("change", () => uploadFiles(fileInput.files));
 
 /**
+ * Get current date + timestamp as a string "YYYY-MM-DD HH.MM.SS"
+ */
+function getTimestamp() {
+  const now = new Date();
+  const date = now.toISOString().slice(0, 10);
+  const time = now.toLocaleTimeString();
+  return `${date} ${time}`;
+}
+
+/**
  * Download a file from server
  */
 async function downloadFile(file) {
@@ -138,20 +148,29 @@ async function uploadFiles(files) {
 }
 
 /**
- * Execute server-side script
+ * Execute a server-side script
  */
 async function runScript(name) {
-  const response = await fetch(`/api/scripts/${name}`, { method: "POST" });
-
-  const result = await response.json();
-
   const outputElem = document.getElementById("script-output");
-  outputElem.textContent +=
-    `\n$ ${name}\n\n` + result.output + `\nExit code: ${result.exit_code}\n`;
-
-  // auto-scroll to bottom
   const terminal = document.getElementById("terminal-container");
+
+  outputElem.textContent += `\n[${getTimestamp()}] $ ${name}\n[ RUNNING ]\n`;
+
   terminal.scrollTop = terminal.scrollHeight;
+
+  try {
+    const response = await fetch(`/api/scripts/${name}`, { method: "POST" });
+    const result = await response.json();
+    const status = result.exit_code === 0 ? "[ SUCCESS ]" : "[ FAILED ]";
+
+    outputElem.textContent += result.output + `\n${status}\n`;
+  } catch (err) {
+    outputElem.textContent += `\n[ FAILED ] ${err}\n`;
+  }
+
+  outputElem.textContent += "\n--------------------------------\n"; // separator
+
+  terminal.scrollTop = terminal.scrollHeight; // auto-scroll to bottom
 }
 
 window.runScript = runScript;
