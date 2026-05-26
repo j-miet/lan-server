@@ -4,6 +4,7 @@
 #include "../api/files_api.h"
 #include "../api/upload_api.h"
 #include "../config.h"
+#include "../scripts/scripts.h"
 #include "../utils/addr.h"
 #include "auth.h"
 #include "context.h"
@@ -20,6 +21,7 @@ static Route routes[] = {{"GET", "/", 0, 0, routing_root},
                          {"GET", "/api/files", 0, 1, routing_files},
                          {"POST", "/api/upload", 0, 1, routing_upload},
                          {"DELETE", "/api/files", 1, 1, routing_delete},
+                         {"POST", "/api/scripts", 1, 1, routing_script_execute},
                          {NULL, NULL, 0, 0, NULL}};
 
 static int match_route(Route* r, RequestContext* ctx) {
@@ -114,4 +116,8 @@ void routing_upload(RequestContext* ctx) {
 
 void routing_delete(RequestContext* ctx) {
     handle_delete_file(ctx->client_fd, ctx->req->path);
+}
+
+void routing_script_execute(RequestContext* ctx) {
+    handle_script_execute(ctx->client_fd, ctx->req->path);
 }
