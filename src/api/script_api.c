@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "../filesystem/json.h"
+#include "../http/request.h"
 #include "../http/response.h"
 #include "../scripting/jobs.h"
 #include "../scripting/scripts.h"
@@ -12,14 +13,106 @@
 #define JSON_OVERHEAD 64
 #define JSON_BUF (ESCAPED_BUF + JSON_OVERHEAD)
 
-// list all scripts here
-ScriptEntry scripts[] = {{"test", "./scripts/test.sh"}, {NULL, NULL}};
+// clang-format off
+
+// this is for testing/implementing scripts without args payloads
+ScriptField test_fields[] = {
+    { "arg1", "text", {NULL}}, 
+    { "arg2", "select", { "full", "incremental", NULL}},
+    { NULL }
+};
+
+// actual fields are listed here
+ScriptField script_test[] = {
+    { "message", "select", { "hello!", "bye!", NULL}},
+    { NULL }
+};
+
+// scripts themselves (name, path, args field) must be added here
+ScriptEntry scripts[] = {
+    { "test", "./scripts/test.sh", script_test},
+    { NULL, NULL, NULL}
+};
+
+// clang-format on
+
+/**
+ * Create a json response from ScriptEntry struct
+ */
+void handle_scripts_api(int client_fd) {
+    char json[16384];
+
+    json[0] = '\0';
+
+    strcat(json, "[");
+
+    for (int i = 0; scripts[i].name != NULL; i++) {
+        if (i > 0)
+            strcat(json, ",");
+
+        strcat(json, "{");
+
+        char tmp[1024];
+
+        snprintf(tmp, sizeof(tmp), "\"name\":\"%s\",", scripts[i].name);
+
+        strcat(json, tmp);
+        strcat(json, "\"fields\":[");
+
+        for (int j = 0; scripts[i].fields[j].name != NULL; j++) {
+            if (j > 0)
+                strcat(json, ",");
+
+            ScriptField* field = &scripts[i].fields[j];
+
+            snprintf(tmp, sizeof(tmp),
+                     "{"
+                     "\"name\":\"%s\","
+                     "\"type\":\"%s\"",
+                     field->name, field->type);
+
+            strcat(json, tmp);
+
+            // optional select options
+            if (strcmp(field->type, "select") == 0) {
+                strcat(json, ",\"options\":[");
+
+                for (int k = 0; field->options[k] != NULL; k++) {
+                    if (k > 0)
+                        strcat(json, ",");
+
+                    strcat(json, "\"");
+                    strcat(json, field->options[k]);
+                    strcat(json, "\"");
+                }
+
+                strcat(json, "]");
+            }
+
+            strcat(json, "}");
+        }
+
+        strcat(json, "]");
+        strcat(json, "}");
+    }
+
+    strcat(json, "]");
+
+    send_response(client_fd, 200, "OK", "application/json", json);
+}
 
 /**
  * Allocates a job for script, starts the job in a new thread and sends job id for status api access
  */
-void handle_script_execute(int client_fd, const char* path) {
-    const char* script_name = path + strlen("/api/scripts/");
+void handle_script_execute(int client_fd, HttpRequest* req) {
+    char script_name[128] = "";
+
+    json_get_string(req->body, "script", script_name, sizeof(script_name));
+
+    if (strlen(script_name) == 0) {
+        send_response(client_fd, 400, "Bad Request", "application/json", "{\"error\":\"Missing script name\"}");
+        return;
+    }
 
     Job* job = create_job();
 
@@ -47,7 +140,28 @@ void handle_script_execute(int client_fd, const char* path) {
     job->status = JOB_RUNNING;
     job->output[0] = '\0';
 
-    start_job(job, script->command);
+    char command[512] = {0};
+    snprintf(command, sizeof(command), "%s", script->command);
+
+    if (req->body && strlen(req->body) > 0) {
+        char arg[256];
+
+        for (int i = 0; script->fields[i].name != NULL; i++) {
+            ScriptField* field = &script->fields[i];
+            memset(arg, 0, sizeof(arg)); // flush previous arg data
+
+            json_get_string(req->body, field->name, arg, sizeof(arg));
+
+            if (arg[0] != '\0') {
+                strncat(command, " ", sizeof(command) - strlen(command) - 1);
+                strncat(command, arg, sizeof(command) - strlen(command) - 1);
+            }
+        }
+    } else {
+        snprintf(command, sizeof(command), "%s", script->command);
+    }
+
+    start_job(job, command);
 
     char json[128];
     snprintf(json, sizeof(json), "{\"job_id\":%d}", job->id);

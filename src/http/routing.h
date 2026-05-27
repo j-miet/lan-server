@@ -8,7 +8,7 @@ typedef void (*RouteHandler)(RequestContext* ctx); // route handler function typ
 typedef struct {
     const char* method; // GET, POST, DELETE or NULL for all
     const char* path;   // route path
-    int prefix;         // 1 = starts with, 0 = exact match
+    int is_prefix;      // 1 = starts with, 0 = exact match
     int auth_required;  // 1 = auth route, 0 = public route
     RouteHandler handler;
 } Route;

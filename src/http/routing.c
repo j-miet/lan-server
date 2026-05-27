@@ -12,6 +12,16 @@
 #include "response.h"
 #include "routing.h"
 
+typedef enum {
+    DIRECT,
+    PREFIX,
+} RoutePrefix;
+
+typedef enum {
+    PUBLIC,
+    AUTH
+} RouteAuth;
+
 static int match_route(Route* r, RequestContext* ctx) {
     const char* method = ctx->req->method;
     const char* path = ctx->req->path;
@@ -19,7 +29,7 @@ static int match_route(Route* r, RequestContext* ctx) {
     if (r->method && strcmp(r->method, method) != 0)
         return 0;
 
-    if (r->prefix) {
+    if (r->is_prefix) {
         return strncmp(path, r->path, strlen(r->path)) == 0;
     }
 
@@ -81,8 +91,12 @@ static void routing_delete(RequestContext* ctx) {
     handle_delete_file(ctx->client_fd, ctx->req->path);
 }
 
+static void routing_script_api(RequestContext* ctx) {
+    handle_scripts_api(ctx->client_fd);
+}
+
 static void routing_script_execute(RequestContext* ctx) {
-    handle_script_execute(ctx->client_fd, ctx->req->path);
+    handle_script_execute(ctx->client_fd, ctx->req);
 }
 
 static void routing_job_status(RequestContext* ctx) {
@@ -90,18 +104,19 @@ static void routing_job_status(RequestContext* ctx) {
 }
 
 // all routes
-static Route routes[] = {{"GET", "/", 0, 0, routing_root},
-                         {"GET", "/hello", 0, 0, routing_hello},
-                         {"POST", "/api/login", 0, 0, routing_login},
-                         {"POST", "/api/logout", 0, 0, routing_logout},
-                         {"GET", "/index.html", 0, 0, routing_index},
-                         {"GET", "/download", 1, 1, routing_download},
-                         {"GET", "/api/files", 0, 1, routing_files},
-                         {"POST", "/api/upload", 0, 1, routing_upload},
-                         {"DELETE", "/api/files", 1, 1, routing_delete},
-                         {"POST", "/api/scripts", 1, 1, routing_script_execute},
-                         {"GET", "/api/jobs", 1, 1, routing_job_status},
-                         {NULL, NULL, 0, 0, NULL}};
+static Route routes[] = {{"GET", "/", DIRECT, PUBLIC, routing_root},
+                         {"GET", "/hello", DIRECT, PUBLIC, routing_hello},
+                         {"POST", "/api/login", DIRECT, PUBLIC, routing_login},
+                         {"POST", "/api/logout", DIRECT, PUBLIC, routing_logout},
+                         {"GET", "/index.html", DIRECT, PUBLIC, routing_index},
+                         {"GET", "/download", PREFIX, AUTH, routing_download},
+                         {"GET", "/api/files", DIRECT, AUTH, routing_files},
+                         {"POST", "/api/upload", DIRECT, AUTH, routing_upload},
+                         {"DELETE", "/api/files", PREFIX, AUTH, routing_delete},
+                         {"GET", "/api/scripts", DIRECT, AUTH, routing_script_api},
+                         {"POST", "/api/scripts/run", DIRECT, AUTH, routing_script_execute},
+                         {"GET", "/api/jobs", PREFIX, AUTH, routing_job_status},
+                         {NULL, NULL, DIRECT, PUBLIC, NULL}};
 
 /**
  * Router function
