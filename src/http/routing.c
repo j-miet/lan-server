@@ -12,20 +12,6 @@
 #include "response.h"
 #include "routing.h"
 
-// all routes
-static Route routes[] = {{"GET", "/", 0, 0, routing_root},
-                         {"GET", "/hello", 0, 0, routing_hello},
-                         {"POST", "/api/login", 0, 0, routing_login},
-                         {"POST", "/api/logout", 0, 0, routing_logout},
-                         {"GET", "/index.html", 0, 0, routing_index},
-                         {"GET", "/download", 1, 1, routing_download},
-                         {"GET", "/api/files", 0, 1, routing_files},
-                         {"POST", "/api/upload", 0, 1, routing_upload},
-                         {"DELETE", "/api/files", 1, 1, routing_delete},
-                         {"POST", "/api/scripts", 1, 1, routing_script_execute},
-                         {"GET", "/api/jobs", 1, 1, routing_job_status},
-                         {NULL, NULL, 0, 0, NULL}};
-
 static int match_route(Route* r, RequestContext* ctx) {
     const char* method = ctx->req->method;
     const char* path = ctx->req->path;
@@ -40,34 +26,9 @@ static int match_route(Route* r, RequestContext* ctx) {
     return strcmp(path, r->path) == 0;
 }
 
-void route_request(RequestContext* ctx) {
-    fprintf(stderr, "Address: %s\n", get_client_ip(ctx->client_fd));
+// route handlers
 
-    for (int i = 0; routes[i].handler != NULL; i++) {
-        Route* r = &routes[i];
-
-        if (!match_route(r, ctx))
-            continue;
-
-        if (r->auth_required) {
-            if (!authenticate_request(ctx)) {
-                send_response(ctx->client_fd, 401, "Unauthorized", "application/json", "{\"error\":\"Unauthorized\"}");
-
-                return;
-            }
-        }
-
-        r->handler(ctx); // call appropriate route handler
-        return;
-    }
-
-    // general end point (e.g. public css & js files)
-    serve_static_file(ctx->client_fd, ctx->req->path);
-}
-
-// routing functions
-
-void routing_root(RequestContext* ctx) {
+static void routing_root(RequestContext* ctx) {
     if (!authenticate_request(ctx)) {
         send_redirect(ctx->client_fd, "/login.html");
         return;
@@ -76,7 +37,7 @@ void routing_root(RequestContext* ctx) {
     serve_static_file(ctx->client_fd, "/index.html");
 }
 
-void routing_login(RequestContext* ctx) {
+static void routing_login(RequestContext* ctx) {
     if (!authenticate_login(ctx)) {
         fprintf(stderr, "=> Login failed from %s\n", get_client_ip(ctx->client_fd));
         send_response(ctx->client_fd, 401, "Unauthorized", "application/json", "{\"error\":\"Unauthorized\"}");
@@ -87,15 +48,15 @@ void routing_login(RequestContext* ctx) {
     send_response_with_cookie(ctx->client_fd, g_config.token);
 }
 
-void routing_logout(RequestContext* ctx) {
+static void routing_logout(RequestContext* ctx) {
     send_response_clear_cookie(ctx->client_fd);
 }
 
-void routing_hello(RequestContext* ctx) {
+static void routing_hello(RequestContext* ctx) {
     serve_text(ctx->client_fd, "Hello from server!");
 }
 
-void routing_index(RequestContext* ctx) {
+static void routing_index(RequestContext* ctx) {
     if (!authenticate_request(ctx)) {
         send_redirect(ctx->client_fd, "/login.html");
         return;
@@ -104,26 +65,65 @@ void routing_index(RequestContext* ctx) {
     serve_static_file(ctx->client_fd, "/index.html");
 }
 
-void routing_download(RequestContext* ctx) {
+static void routing_download(RequestContext* ctx) {
     handle_download(ctx->client_fd, ctx->req->path);
 }
 
-void routing_files(RequestContext* ctx) {
+static void routing_files(RequestContext* ctx) {
     handle_files_api(ctx->client_fd);
 }
 
-void routing_upload(RequestContext* ctx) {
+static void routing_upload(RequestContext* ctx) {
     handle_stream_upload(ctx->client_fd, ctx->req, ctx->raw_headers, ctx->header_size);
 }
 
-void routing_delete(RequestContext* ctx) {
+static void routing_delete(RequestContext* ctx) {
     handle_delete_file(ctx->client_fd, ctx->req->path);
 }
 
-void routing_script_execute(RequestContext* ctx) {
+static void routing_script_execute(RequestContext* ctx) {
     handle_script_execute(ctx->client_fd, ctx->req->path);
 }
 
-void routing_job_status(RequestContext* ctx) {
+static void routing_job_status(RequestContext* ctx) {
     handle_job_status(ctx->client_fd, ctx->req->path);
+}
+
+// all routes
+static Route routes[] = {{"GET", "/", 0, 0, routing_root},
+                         {"GET", "/hello", 0, 0, routing_hello},
+                         {"POST", "/api/login", 0, 0, routing_login},
+                         {"POST", "/api/logout", 0, 0, routing_logout},
+                         {"GET", "/index.html", 0, 0, routing_index},
+                         {"GET", "/download", 1, 1, routing_download},
+                         {"GET", "/api/files", 0, 1, routing_files},
+                         {"POST", "/api/upload", 0, 1, routing_upload},
+                         {"DELETE", "/api/files", 1, 1, routing_delete},
+                         {"POST", "/api/scripts", 1, 1, routing_script_execute},
+                         {"GET", "/api/jobs", 1, 1, routing_job_status},
+                         {NULL, NULL, 0, 0, NULL}};
+
+/**
+ * Router function
+ */
+void route_request(RequestContext* ctx) {
+    for (int i = 0; routes[i].handler != NULL; i++) {
+        Route* r = &routes[i];
+
+        if (!match_route(r, ctx))
+            continue;
+
+        if (r->auth_required) {
+            if (!authenticate_request(ctx)) {
+                send_response(ctx->client_fd, 401, "Unauthorized", "application/json", "{\"error\":\"Unauthorized\"}");
+                return;
+            }
+        }
+
+        r->handler(ctx); // call appropriate route handler
+        return;
+    }
+
+    // general end point (e.g. public css & js files)
+    serve_static_file(ctx->client_fd, ctx->req->path);
 }

@@ -6,6 +6,9 @@
 #include "server.h"
 #include "socket.h"
 
+/**
+ * Create a server socket which starts accepting client connections
+ */
 void start_server(int port) {
     int server_fd = create_server_socket(port);
 

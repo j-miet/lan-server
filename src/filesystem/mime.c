@@ -7,8 +7,7 @@
 #include "mime.h"
 
 /**
- * MIME types
- * Most common ones can be found here https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types
+ * Get content MIME type
  */
 const char* get_content_type(const char* path) {
     const char* ext = strrchr(path, '.'); // file extension
@@ -31,13 +30,11 @@ const char* get_content_type(const char* path) {
     if (strcmp(ext, ".gif") == 0)
         return "image/gif";
 
-    /* short video files work but larger ones require partial content response which has not been implemented yet
     if (strcmp(ext, ".mp4") == 0)
         return "video/mp4";
 
     if (strcmp(ext, ".mp3") == 0)
         return "audio/mpeg";
-    */
 
     if (strcmp(ext, ".xlsx") == 0)
         return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";

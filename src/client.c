@@ -4,9 +4,14 @@
 #include "api/upload_api.h"
 #include "client.h"
 #include "http/routing.h"
+#include "utils/addr.h"
 
+/**
+ * Process a client request by reading, parsing and sending it to router
+ */
 void handle_client(int client_fd) {
     printf("-- New Request --\n");
+    fprintf(stderr, "Address: %s\n", get_client_ip(client_fd));
 
     char header_buffer[16384];
     int header_size = read_http_headers(client_fd, header_buffer, sizeof(header_buffer) - 1);

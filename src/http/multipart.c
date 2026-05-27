@@ -7,6 +7,10 @@
 
 #include "multipart.h"
 
+/**
+ * Get boundary of a multipart request
+ * Returns 0 on success, -1 on failure
+ */
 int get_boundary(const char* raw, char* boundary, int size) {
     const char* header = strstr(raw, "boundary=");
 
@@ -24,6 +28,9 @@ int get_boundary(const char* raw, char* boundary, int size) {
     return 0;
 }
 
+/**
+ * Remove multipart footer boundary from a file
+ */
 void trim_multipart_footer(const char* path, const char* boundary) {
     FILE* fp = fopen(path, "rb+");
 
@@ -47,7 +54,6 @@ void trim_multipart_footer(const char* path, const char* boundary) {
 
     if (!boundary_pos) {
         fclose(fp);
-
         return;
     }
 

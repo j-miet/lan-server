@@ -14,6 +14,10 @@ static const char* find_cookie_header(const char* headers) {
     return cookie;
 }
 
+/**
+ * Verifies a request includes valid auth token in cookies
+ * Returns 1 on success, 0 on false authentication
+ */
 int authenticate_request(RequestContext* ctx) {
     const char* cookie = find_cookie_header(ctx->raw_headers);
 
@@ -48,6 +52,10 @@ int authenticate_request(RequestContext* ctx) {
     return 0;
 }
 
+/**
+ * Verifies a login attempt with auth token
+ * Returns 0 on success, non-zero on differing auth tokens
+ */
 int authenticate_login(RequestContext* ctx) {
     if (!ctx->req->body)
         return 0;

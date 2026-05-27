@@ -3,6 +3,9 @@
 
 #include "url.h"
 
+/**
+ * Perform url decoding on source buffer and passes decoded data into dest
+ */
 void url_decode(char* dest, const char* src) {
     while (*src) {
         // decode hexadecimals %XX e.g. empty space %20

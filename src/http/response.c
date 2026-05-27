@@ -5,10 +5,16 @@
 
 #include "response.h"
 
+/**
+ * Send a text response
+ */
 void send_text_response(int client_fd, int status_code, const char* status_text, const char* body) {
     send_response(client_fd, status_code, status_text, "text/plain", body);
 }
 
+/**
+ * Send a general http response
+ */
 void send_response(int client_fd, int status_code, const char* status_text, const char* content_type,
                    const char* body) {
     char response[16384];
@@ -25,6 +31,9 @@ void send_response(int client_fd, int status_code, const char* status_text, cons
     send(client_fd, response, response_length, 0);
 }
 
+/**
+ * Send a redirecting response (302)
+ */
 void send_redirect(int client_fd, const char* location) {
     char response[512];
     int response_length = snprintf(response, sizeof(response),
@@ -37,6 +46,9 @@ void send_redirect(int client_fd, const char* location) {
     send(client_fd, response, response_length, 0);
 }
 
+/**
+ * Send response with cookie data
+ */
 void send_response_with_cookie(int client_fd, const char* token) {
     char response[1024];
 
@@ -52,6 +64,9 @@ void send_response_with_cookie(int client_fd, const char* token) {
     send(client_fd, response, response_length, 0);
 }
 
+/**
+ * Send response with clearer cookie data
+ */
 void send_response_clear_cookie(int client_fd) {
     char response[512];
     int response_length = snprintf(response, sizeof(response),
@@ -63,6 +78,9 @@ void send_response_clear_cookie(int client_fd) {
     send(client_fd, response, response_length, 0);
 }
 
+/**
+ * Send a file to client via streaming
+ */
 void send_file_stream(int client_fd, const char* path, const char* content_type) {
     FILE* file = fopen(path, "rb");
 
@@ -73,7 +91,6 @@ void send_file_stream(int client_fd, const char* path, const char* content_type)
 
     if (stat(path, &st) != 0) {
         fclose(file);
-
         return;
     }
 
@@ -108,7 +125,6 @@ void send_file_stream(int client_fd, const char* path, const char* content_type)
 
             if (sent <= 0) {
                 fclose(file);
-
                 return;
             }
 

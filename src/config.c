@@ -10,6 +10,10 @@ static void trim_newline(char* str) {
     str[strcspn(str, "\r\n")] = '\0';
 }
 
+/**
+ * Loads server configurations
+ * Returns 0 on success, -1 on failure
+ */
 int load_config(const char* path) {
     FILE* file = fopen(path, "r");
 

@@ -9,12 +9,14 @@
 #include "../http/response.h"
 #include "files_api.h"
 
+/**
+ * Retrieve names of all uploaded server files for client
+ */
 void handle_files_api(int client_fd) {
     DIR* dir = opendir("uploads");
 
     if (!dir) {
         send_text_response(client_fd, 500, "Internal Server Error", "Failed to open uploads directory");
-
         return;
     }
 
@@ -25,9 +27,8 @@ void handle_files_api(int client_fd) {
     int first = 1;
 
     while ((dir_entry = readdir(dir)) != NULL) {
-        if (strcmp(dir_entry->d_name, ".") == 0 || strcmp(dir_entry->d_name, "..") == 0) {
+        if (strcmp(dir_entry->d_name, ".") == 0 || strcmp(dir_entry->d_name, "..") == 0)
             continue;
-        }
 
         if (!first)
             strcat(json, ",");
@@ -47,14 +48,16 @@ void handle_files_api(int client_fd) {
     send_response(client_fd, 200, "OK", "application/json", json);
 }
 
+/**
+ * Handle a file download request from client
+ */
 void handle_download(int client_fd, const char* path) {
     char decoded[256];
 
-    url_decode(decoded, path + 10); // +10 because /download/ has length 10
+    url_decode(decoded, path + 10); // + 10 because string '/download/' has length 10
 
     if (!is_safe_path(decoded)) {
         send_text_response(client_fd, 403, "Forbidden", "Forbidden");
-
         return;
     }
 
@@ -66,6 +69,9 @@ void handle_download(int client_fd, const char* path) {
     send_file_stream(client_fd, full_path, content_type);
 }
 
+/**
+ * Handle a file delete request from client
+ */
 void handle_delete_file(int client_fd, const char* path) {
     const char* filename = path + 11;
 
@@ -75,7 +81,6 @@ void handle_delete_file(int client_fd, const char* path) {
 
     if (!is_safe_path(decoded)) {
         send_text_response(client_fd, 403, "Forbidden", "Forbidden");
-
         return;
     }
 
@@ -84,29 +89,32 @@ void handle_delete_file(int client_fd, const char* path) {
 
     if (remove(full_path) != 0) {
         send_text_response(client_fd, 404, "Not Found", "Failed to delete file");
-
         return;
     }
 
     send_response(client_fd, 200, "OK", "application/json", "{\"success\": true}");
 }
 
+/**
+ * Send static file to requesting client
+ */
 void serve_static_file(int client_fd, const char* path) {
     char full_path[512];
 
     if (!is_safe_path(path)) {
         send_text_response(client_fd, 403, "Forbidden", "Forbidden");
-
         return;
     }
 
     snprintf(full_path, sizeof(full_path), "public%s", path);
-
     const char* content_type = get_content_type(full_path);
 
     send_file_stream(client_fd, full_path, content_type);
 }
 
+/**
+ * Send text response to requesting client
+ */
 void serve_text(int client_fd, const char* msg) {
     send_text_response(client_fd, 200, "OK", msg);
 }

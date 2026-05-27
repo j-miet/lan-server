@@ -15,6 +15,9 @@
 // list all scripts here
 ScriptEntry scripts[] = {{"test", "./scripts/test.sh"}, {NULL, NULL}};
 
+/**
+ * Allocates a job for script, starts the job in a new thread and sends job id for status api access
+ */
 void handle_script_execute(int client_fd, const char* path) {
     const char* script_name = path + strlen("/api/scripts/");
 
@@ -23,7 +26,6 @@ void handle_script_execute(int client_fd, const char* path) {
     if (!job) {
         send_response(client_fd, 500, "Internal Server Error", "application/json",
                       "{\"error\":\"No job slots available\"}");
-
         return;
     }
 
@@ -38,7 +40,6 @@ void handle_script_execute(int client_fd, const char* path) {
 
     if (!script) {
         send_response(client_fd, 404, "Not Found", "application/json", "{\"error\":\"Script not found\"}");
-
         return;
     }
 
@@ -54,6 +55,9 @@ void handle_script_execute(int client_fd, const char* path) {
     send_response(client_fd, 200, "OK", "application/json", json);
 }
 
+/**
+ * Request status of an existing job
+ */
 void handle_job_status(int client_fd, const char* path) {
     int id = atoi(path + strlen("/api/jobs/"));
 
@@ -61,7 +65,6 @@ void handle_job_status(int client_fd, const char* path) {
 
     if (!job) {
         send_response(client_fd, 404, "Not Found", "application/json", "{\"error\":\"Job not found\"}");
-
         return;
     }
 

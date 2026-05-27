@@ -6,6 +6,9 @@
 #include "../http/response.h"
 #include "upload_api.h"
 
+/**
+ * Uploads a file to server via streaming
+ */
 void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, int header_size) {
     const char* body_start = strstr(headers, "\r\n\r\n");
 
@@ -20,7 +23,6 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
 
     if (get_boundary(headers, boundary, sizeof(boundary)) < 0) {
         send_text_response(client_fd, 400, "Bad Request", "Missing boundary");
-
         return;
     }
 
@@ -28,7 +30,6 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
 
     if (!file_data_start) {
         send_text_response(client_fd, 400, "Bad Request", "Invalid multipart");
-
         return;
     }
 
@@ -62,7 +63,6 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
 
     if (!fp) {
         send_text_response(client_fd, 500, "Internal Server Error", "Failed to open file");
-
         return;
     };
 
@@ -74,7 +74,6 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
 
     while (remaining > 0) {
         int to_read = remaining < (long long)sizeof(buffer) ? (int)remaining : (int)sizeof(buffer);
-
         int received = recv(client_fd, buffer, to_read, 0);
 
         if (received <= 0)

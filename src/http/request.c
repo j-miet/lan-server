@@ -4,6 +4,9 @@
 
 #include "request.h"
 
+/**
+ * Read header data into buffer and return its length
+ */
 int read_http_headers(int client_fd, char* buffer, int max_size) {
     int total = 0;
 
@@ -24,6 +27,9 @@ int read_http_headers(int client_fd, char* buffer, int max_size) {
     return total;
 }
 
+/**
+ * Get request body's content length
+ */
 long long get_content_length(const char* raw) {
     const char* header = strstr(raw, "Content-Length");
 
@@ -37,6 +43,10 @@ long long get_content_length(const char* raw) {
     return length;
 }
 
+/**
+ * Parse raw request and read data into HttpRequest struct.
+ * Returns 0 on success, -1 on failure
+ */
 int parse_http_request(const char* raw, HttpRequest* req) {
     char request_line[1024];
 

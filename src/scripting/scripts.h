@@ -6,6 +6,4 @@ typedef struct {
     const char* command;
 } ScriptEntry;
 
-extern ScriptEntry scripts[];
-
 #endif

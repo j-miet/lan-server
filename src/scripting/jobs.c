@@ -14,6 +14,7 @@ typedef struct {
 Job jobs[MAX_JOBS];
 int next_job_id = 1;
 
+// pthread_create requires that both the input value and return typ must be void*
 static void* job_worker(void* arg) {
     JobThreadArgs* args = (JobThreadArgs*)arg;
 
@@ -23,6 +24,7 @@ static void* job_worker(void* arg) {
 
     if (!pipe) {
         job->status = JOB_FAILED;
+
         free(args);
 
         return NULL;
@@ -44,6 +46,9 @@ static void* job_worker(void* arg) {
     return NULL;
 }
 
+/**
+ * Create a new job
+ */
 Job* create_job() {
     for (int i = 0; i < MAX_JOBS; i++) {
         if (jobs[i].id == 0) {
@@ -56,6 +61,9 @@ Job* create_job() {
     return NULL;
 }
 
+/**
+ * Find an existing job by its id
+ */
 Job* find_job(int id) {
     for (int i = 0; i < MAX_JOBS; i++) {
         if (jobs[i].id == id)
@@ -65,6 +73,9 @@ Job* find_job(int id) {
     return NULL;
 }
 
+/**
+ * Start a job via threading
+ */
 void start_job(Job* job, const char* command) {
     job->status = JOB_RUNNING;
     job->output[0] = '\0';

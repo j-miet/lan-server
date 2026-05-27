@@ -4,6 +4,9 @@
 
 #include "socket.h"
 
+/**
+ * Create a server socket and return its file descriptor
+ */
 int create_server_socket(int port) {
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
