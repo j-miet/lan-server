@@ -151,7 +151,7 @@ async function uploadFiles(files) {
  * Execute a server-side script
  * Server can run each script as a separate job via threading
  */
-async function runScript(name) {
+async function runScript(name, payload = null) {
   const outputElem = document.getElementById("script-output");
   const terminal = document.getElementById("terminal-container");
 
@@ -165,8 +165,15 @@ async function runScript(name) {
 
   terminal.scrollTop = terminal.scrollHeight;
 
+  const options = { method: "POST" };
+
+  if (!payload) payload = {};
+
+  payload.script = name;
+  options.body = JSON.stringify(payload);
+
   try {
-    const response = await fetch(`/api/scripts/${name}`, { method: "POST" });
+    const response = await fetch(`/api/scripts/run`, options);
     const job = await response.json();
 
     jobElem.textContent += `[ JOB ${job.job_id} STARTED ]\n`;
@@ -203,6 +210,120 @@ async function runScript(name) {
   terminal.scrollTop = terminal.scrollHeight;
 }
 
+/**
+ * Create script args interface
+ */
+function renderScriptForm(script) {
+  const container = document.getElementById("script-form-container");
+
+  const titleString = "[ " + script.name + " ]";
+
+  // compare with current title: if same, flush contents + stored dataset. Otherwise flush just html
+  // with this, clicking at same script button closes the form and clicking another one just overrides its contents
+  if (container.dataset.title === titleString) {
+    container.innerHTML = "";
+    container.dataset.title = "";
+    return;
+  }
+
+  container.innerHTML = "";
+
+  const title = document.createElement("h3");
+  title.textContent = titleString;
+
+  container.appendChild(title);
+  container.dataset.title = titleString; // save current title
+
+  const form = document.createElement("div");
+
+  const inputs = {};
+
+  for (const field of script.fields) {
+    const wrapper = document.createElement("div");
+    wrapper.style =
+      "display: grid; grid-template-columns: 80px 150px; align-items: center";
+
+    const label = document.createElement("label");
+    label.textContent = field.name;
+    label.style = "padding-right: 30px; font-weight: bold";
+    wrapper.appendChild(label);
+
+    let input;
+
+    if (field.type === "select") {
+      input = document.createElement("select");
+
+      for (const option of field.options || []) {
+        const opt = document.createElement("option");
+
+        opt.value = option;
+        opt.textContent = option;
+
+        input.appendChild(opt);
+      }
+    } else {
+      input = document.createElement("input");
+      input.type = "text";
+    }
+
+    inputs[field.name] = input;
+
+    wrapper.appendChild(input);
+
+    form.appendChild(wrapper);
+  }
+
+  const runBtn = document.createElement("button");
+  runBtn.textContent = "Run Script";
+  runBtn.style = "margin-top: 10px";
+
+  runBtn.onclick = () => {
+    const payload = {};
+
+    for (const key in inputs) {
+      payload[key] = inputs[key].value;
+    }
+
+    // required field validation
+    for (const field of script.fields) {
+      const value = inputs[field.name].value;
+
+      if (field.required && !value.trim()) {
+        alert(`${field.name} is required`);
+        return;
+      }
+    }
+
+    runScript(script.name, payload);
+  };
+
+  form.appendChild(runBtn);
+
+  container.appendChild(form);
+}
+
+/**
+ * Load all server-side scripts and creates buttons which open a form for input args for each
+ */
+async function loadScripts() {
+  const res = await fetch("/api/scripts");
+  const scripts = await res.json();
+  const container = document.getElementById("script-container");
+
+  container.innerHTML = "";
+
+  for (const script of scripts) {
+    const btn = document.createElement("button");
+
+    btn.textContent = script.name;
+
+    btn.onclick = () => renderScriptForm(script);
+
+    container.appendChild(btn);
+  }
+}
+
 window.runScript = runScript;
 
 loadFiles();
+loadScripts();
