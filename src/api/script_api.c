@@ -15,20 +15,27 @@
 
 // clang-format off
 
-// this is for testing/implementing scripts without args payloads
-ScriptField test_fields[] = {
-    { "arg1", "text", {NULL}}, 
-    { "arg2", "select", { "full", "incremental", NULL}},
-    { NULL }
-};
-
-// actual fields are listed here
+/**
+ * ScriptFields are used to dynamically generate web ui interface. Each has display name, input type (text/select) and
+ * if type is 'select', all pre-defined inputs (otherwise NULL array)
+ * In general NULL is used for terminating line parsing handle_scripts_api
+ * - Example - 
+ * name: input, "text" means free text input so no fields need to defined => set { NULL } as third parameter
+ * name: message, "select" means dropdown select with fields defined in third parameters which are "hello!" or "bye!".
+ * Then per usual finish this array with NULL terminator
+ */
 ScriptField script_test[] = {
+    { "input", "text", {NULL}}, 
     { "message", "select", { "hello!", "bye!", NULL}},
     { NULL }
 };
 
-// scripts themselves (name, path, args field) must be added here
+/**
+ * All scripts must be added here in order to use them. Each has 
+ * - name (this shows as web ui button name + title)
+ * - path (script location relative to root dir)
+ * - ScriptField struct for passing args via web UI
+ */
 ScriptEntry scripts[] = {
     { "test", "./scripts/test.sh", script_test},
     { NULL, NULL, NULL}

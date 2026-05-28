@@ -208,6 +208,7 @@ async function runScript(name, payload = null) {
   }
 
   terminal.scrollTop = terminal.scrollHeight;
+  loadFiles(); // refresh server files
 }
 
 /**
@@ -216,11 +217,9 @@ async function runScript(name, payload = null) {
 function renderScriptForm(script) {
   const container = document.getElementById("script-form-container");
 
-  const titleString = "[ " + script.name + " ]";
-
   // compare with current title: if same, flush contents + stored dataset. Otherwise flush just html
   // with this, clicking at same script button closes the form and clicking another one just overrides its contents
-  if (container.dataset.title === titleString) {
+  if (container.dataset.title === script.name) {
     container.innerHTML = "";
     container.dataset.title = "";
     return;
@@ -229,10 +228,11 @@ function renderScriptForm(script) {
   container.innerHTML = "";
 
   const title = document.createElement("h3");
-  title.textContent = titleString;
+  title.textContent = script.name;
+  title.style = "color: darkblue";
 
   container.appendChild(title);
-  container.dataset.title = titleString; // save current title
+  container.dataset.title = script.name; // save current title
 
   const form = document.createElement("div");
 
@@ -241,7 +241,7 @@ function renderScriptForm(script) {
   for (const field of script.fields) {
     const wrapper = document.createElement("div");
     wrapper.style =
-      "display: grid; grid-template-columns: 80px 150px; align-items: center";
+      "display: grid; grid-template-columns: 150px 150px; align-items: center";
 
     const label = document.createElement("label");
     label.textContent = field.name;
@@ -275,7 +275,7 @@ function renderScriptForm(script) {
 
   const runBtn = document.createElement("button");
   runBtn.textContent = "Run Script";
-  runBtn.style = "margin-top: 10px";
+  runBtn.style = "margin-top: 15px";
 
   runBtn.onclick = () => {
     const payload = {};
