@@ -19,14 +19,15 @@
  * ScriptFields are used to dynamically generate web ui interface. Each has display name, input type (text/select) and
  * if type is 'select', all pre-defined inputs (otherwise NULL array)
  * In general NULL is used for terminating line parsing handle_scripts_api
- * - Example - 
- * name: input, "text" means free text input so no fields need to defined => set { NULL } as third parameter
- * name: message, "select" means dropdown select with fields defined in third parameters which are "hello!" or "bye!".
- * Then per usual finish this array with NULL terminator
+ * 
+ * Example 
+ * - name: input, "text" means free text input so no fields need to defined => set { NULL } as third parameter
+ * - name: message, "select" means dropdown select with fields defined in third parameters which are "hello!" or "bye!".
+ *      Then per usual finish this array with NULL terminator
  */
 ScriptField script_test[] = {
-    { "input", "text", {NULL}}, 
-    { "message", "select", { "hello!", "bye!", NULL}},
+    { "input", "text", "Write something here", 1, {NULL}}, 
+    { "message", "select", "Pick a message", 0, { "hello!", "bye!", NULL}},
     { NULL }
 };
 
@@ -37,8 +38,8 @@ ScriptField script_test[] = {
  * - ScriptField struct for passing args via web UI
  */
 ScriptEntry scripts[] = {
-    { "test", "./scripts/test.sh", script_test},
-    { NULL, NULL, NULL}
+    { "test", "./scripts/test.sh", "Test script", script_test},
+    { NULL, NULL, NULL, NULL}
 };
 
 // clang-format on
@@ -61,7 +62,10 @@ void handle_scripts_api(int client_fd) {
 
         char tmp[1024];
 
-        snprintf(tmp, sizeof(tmp), "\"name\":\"%s\",", scripts[i].name);
+        snprintf(tmp, sizeof(tmp),
+                 "\"name\":\"%s\","
+                 "\"description\":\"%s\",",
+                 scripts[i].name, scripts[i].description);
 
         strcat(json, tmp);
         strcat(json, "\"fields\":[");
@@ -75,8 +79,10 @@ void handle_scripts_api(int client_fd) {
             snprintf(tmp, sizeof(tmp),
                      "{"
                      "\"name\":\"%s\","
-                     "\"type\":\"%s\"",
-                     field->name, field->type);
+                     "\"type\":\"%s\","
+                     "\"description\":\"%s\","
+                     "\"required\":\"%d\"",
+                     field->name, field->type, field->description, field->required);
 
             strcat(json, tmp);
 

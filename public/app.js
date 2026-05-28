@@ -221,11 +221,14 @@ function renderScriptForm(script) {
   // with this, clicking at same script button closes the form and clicking another one just overrides its contents
   if (container.dataset.title === script.name) {
     container.innerHTML = "";
+    container.style = "";
     container.dataset.title = "";
     return;
   }
 
   container.innerHTML = "";
+  container.style =
+    "border: 1px solid black; box-sizing: border-box; padding: 5px; margin-top: 10px";
 
   const title = document.createElement("h3");
   title.textContent = script.name;
@@ -233,6 +236,12 @@ function renderScriptForm(script) {
 
   container.appendChild(title);
   container.dataset.title = script.name; // save current title
+
+  const scriptDescription = document.createElement("h4");
+  scriptDescription.textContent = script.description;
+  scriptDescription.style = "padding-bottom: 10px; color: greenyellow";
+
+  container.appendChild(scriptDescription);
 
   const form = document.createElement("div");
 
@@ -266,9 +275,18 @@ function renderScriptForm(script) {
       input.type = "text";
     }
 
+    input.style = "border-radius: 5px";
+
     inputs[field.name] = input;
 
     wrapper.appendChild(input);
+
+    if (field.description) {
+      const desc = document.createElement("small");
+      desc.textContent = field.description;
+      desc.style = "padding-bottom: 10px";
+      wrapper.appendChild(desc);
+    }
 
     form.appendChild(wrapper);
   }
@@ -285,6 +303,16 @@ function renderScriptForm(script) {
     }
 
     // required field validation
+    for (const field of script.fields) {
+      const value = inputs[field.name].value;
+
+      if (field.required && !value.trim()) {
+        alert(`${field.name} is required`);
+        return;
+      }
+    }
+
+    // input field validation
     for (const field of script.fields) {
       const value = inputs[field.name].value;
 
