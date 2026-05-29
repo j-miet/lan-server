@@ -196,33 +196,34 @@ async function runScript(name, payload = null) {
   payload.script = name;
   options.body = JSON.stringify(payload);
 
+  const response = await fetch(`/api/scripts/run`, options);
+  const job = await response.json();
+
+  jobElem.textContent += `[ JOB ${job.job_id} STARTED ]\n`;
+
+  let finished = false;
+
+  // poll script updates via job id
   try {
-    const response = await fetch(`/api/scripts/run`, options);
-    const job = await response.json();
+    while (!finished) {
+      const statusRes = await fetch(`/api/jobs/status/${job.job_id}`);
+      const status = await statusRes.json();
 
-    jobElem.textContent += `[ JOB ${job.job_id} STARTED ]\n`;
-    terminal.scrollTop = terminal.scrollHeight;
-
-    // poll script updates via job id
-    while (true) {
-      const res = await fetch(`/api/jobs/${job.job_id}`);
-      const data = await res.json();
+      const outputRes = await fetch(`/api/jobs/output/${job.job_id}`);
+      const output = await outputRes.json();
 
       jobElem.textContent =
         `[${startedAt}] $ ${name}\n` +
-        `[ JOB ${job.job_id} ]\n\n` +
-        data.output;
+        `[ JOB ${job.job_id} | ${status.status} ]\n\n` +
+        output.data;
 
       terminal.scrollTop = terminal.scrollHeight;
 
-      if (data.status === "completed" || data.status === "failed") {
-        const status =
-          data.status === "completed" ? "[ SUCCESS ]" : "[ FAILED ]";
+      if (status.status === "completed" || status.status === "failed") {
+        jobElem.textContent +=
+          status.status === "completed" ? "\n[ SUCCESS ]" : "\n[ FAILED ]";
 
-        jobElem.textContent += `\n${status}\n`;
-        jobElem.textContent += "\n--------------------------------\n";
-
-        break;
+        finished = true;
       }
 
       await new Promise((r) => setTimeout(r, 500)); // polling delay
@@ -230,6 +231,8 @@ async function runScript(name, payload = null) {
   } catch (err) {
     jobElem.textContent += `\n[ FAILED ] ${err}\n`;
   }
+
+  jobElem.textContent += "\n--------------------------------\n";
 
   terminal.scrollTop = terminal.scrollHeight;
   loadFiles(); // refresh server files
