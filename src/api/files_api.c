@@ -7,6 +7,7 @@
 #include "../http/request.h"
 #include "../http/response.h"
 #include "../security/sanitize.h"
+#include "../utils/json_builder.h"
 #include "../utils/url.h"
 #include "files_api.h"
 
@@ -30,10 +31,13 @@ void handle_files_api(int client_fd) {
         return;
     }
 
-    char json[65536];
-    json[0] = '\0';
+    JsonBuilder jb;
 
-    strcpy(json, "[");
+    char json[65536]; // only for json_init, don't touch these manually after
+
+    json_init(&jb, json, sizeof(json));
+
+    json_append(&jb, "[");
 
     struct dirent* dir_entry;
     int first = 1;
@@ -52,27 +56,24 @@ void handle_files_api(int client_fd) {
             continue;
 
         if (!first)
-            strcat(json, ",");
+            json_append(&jb, ",");
 
         first = 0;
 
-        char item[2048];
-
         // append file metadata
-        snprintf(item, sizeof(item),
-                 "{"
-                 "\"name\":\"%s\","
-                 "\"size\":\"%lld\","
-                 "\"modified\":\"%lld\","
-                 "\"type\":\"%s\""
-                 "}",
-                 dir_entry->d_name, (long long)st.st_size, (long long)st.st_mtime,
-                 get_file_extension(dir_entry->d_name));
-
-        strcat(json, item);
+        json_append(&jb,
+                    "{"
+                    "\"name\":\"%s\","
+                    "\"size\":\"%lld\","
+                    "\"modified\":\"%lld\","
+                    "\"type\":\"%s\""
+                    "}",
+                    dir_entry->d_name, (long long)st.st_size, (long long)st.st_mtime,
+                    get_file_extension(dir_entry->d_name));
     }
 
-    strcat(json, "]");
+    json_append(&jb, "]");
+
     closedir(dir);
 
     send_response(client_fd, 200, "OK", "application/json", json);

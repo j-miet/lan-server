@@ -8,6 +8,7 @@
 #include "../scripting/jobs.h"
 #include "../scripting/scripts.h"
 #include "../utils/json.h"
+#include "../utils/json_builder.h"
 
 #define ESCAPED_BUF (MAX_OUTPUT * 2)
 #define JSON_OVERHEAD 64
@@ -56,66 +57,61 @@ ScriptEntry scripts[] = {
 void handle_scripts_api(int client_fd) {
     char json[16384];
 
-    json[0] = '\0';
+    JsonBuilder jb;
 
-    strcat(json, "[");
+    json_init(&jb, json, sizeof(json));
+
+    json_append(&jb, "[");
 
     for (int i = 0; scripts[i].name != NULL; i++) {
         if (i > 0)
-            strcat(json, ",");
+            json_append(&jb, ",");
 
-        strcat(json, "{");
+        json_append(&jb, "{");
 
-        char tmp[1024];
+        json_append(&jb,
+                    "\"name\":\"%s\","
+                    "\"description\":\"%s\",",
+                    scripts[i].name, scripts[i].description);
 
-        snprintf(tmp, sizeof(tmp),
-                 "\"name\":\"%s\","
-                 "\"description\":\"%s\",",
-                 scripts[i].name, scripts[i].description);
-
-        strcat(json, tmp);
-        strcat(json, "\"fields\":[");
+        json_append(&jb, "\"fields\":[");
 
         for (int j = 0; scripts[i].fields[j].name != NULL; j++) {
             if (j > 0)
-                strcat(json, ",");
+                json_append(&jb, ",");
 
             ScriptField* field = &scripts[i].fields[j];
 
-            snprintf(tmp, sizeof(tmp),
-                     "{"
-                     "\"name\":\"%s\","
-                     "\"type\":\"%s\","
-                     "\"description\":\"%s\","
-                     "\"required\":\"%d\"",
-                     field->name, field->type, field->description, field->required);
-
-            strcat(json, tmp);
+            json_append(&jb,
+                        "{"
+                        "\"name\":\"%s\","
+                        "\"type\":\"%s\","
+                        "\"description\":\"%s\","
+                        "\"required\":\"%d\"",
+                        field->name, field->type, field->description, field->required);
 
             // optional select options
             if (strcmp(field->type, "select") == 0) {
-                strcat(json, ",\"options\":[");
+                json_append(&jb, ",\"options\":[");
 
                 for (int k = 0; field->options[k] != NULL; k++) {
                     if (k > 0)
-                        strcat(json, ",");
+                        json_append(&jb, ",");
 
-                    strcat(json, "\"");
-                    strcat(json, field->options[k]);
-                    strcat(json, "\"");
+                    json_append(&jb, "\"%s\"", field->options[k]);
                 }
 
-                strcat(json, "]");
+                json_append(&jb, "]");
             }
 
-            strcat(json, "}");
+            json_append(&jb, "}");
         }
 
-        strcat(json, "]");
-        strcat(json, "}");
+        json_append(&jb, "]");
+        json_append(&jb, "}");
     }
 
-    strcat(json, "]");
+    json_append(&jb, "]");
 
     send_response(client_fd, 200, "OK", "application/json", json);
 }
@@ -219,7 +215,7 @@ void handle_job_status(int client_fd, const char* path) {
              "\"id\":%d,"
              "\"status\":\"%s\","
              "\"exit_code\":%d,"
-             "\"output\":\"%s\""
+             "\"output_size\":\"%s\""
              "}",
              job->id, status, job->exit_code, escaped);
 
