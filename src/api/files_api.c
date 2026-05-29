@@ -1,6 +1,7 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "../filesystem/mime.h"
 #include "../filesystem/sanitize.h"
@@ -9,8 +10,17 @@
 #include "../http/response.h"
 #include "files_api.h"
 
+static const char* get_file_extension(const char* name) {
+    const char* ext = strrchr(name, '.');
+
+    if (!ext || ext == name)
+        return "";
+
+    return ext + 1;
+}
+
 /**
- * Retrieve names of all uploaded server files for client
+ * Retrieve metadata of all uploaded server files for client
  */
 void handle_files_api(int client_fd) {
     DIR* dir = opendir("uploads");
@@ -20,7 +30,9 @@ void handle_files_api(int client_fd) {
         return;
     }
 
-    char json[16384];
+    char json[65536];
+    json[0] = '\0';
+
     strcpy(json, "[");
 
     struct dirent* dir_entry;
@@ -30,14 +42,32 @@ void handle_files_api(int client_fd) {
         if (strcmp(dir_entry->d_name, ".") == 0 || strcmp(dir_entry->d_name, "..") == 0)
             continue;
 
+        char full_path[512];
+
+        snprintf(full_path, sizeof(full_path), "uploads/%s", dir_entry->d_name);
+
+        struct stat st;
+
+        if (stat(full_path, &st) != 0)
+            continue;
+
         if (!first)
             strcat(json, ",");
 
         first = 0;
 
-        char item[512];
+        char item[2048];
 
-        snprintf(item, sizeof(item), "\"%s\"", dir_entry->d_name);
+        // append file metadata
+        snprintf(item, sizeof(item),
+                 "{"
+                 "\"name\":\"%s\","
+                 "\"size\":\"%lld\","
+                 "\"modified\":\"%lld\","
+                 "\"type\":\"%s\""
+                 "}",
+                 dir_entry->d_name, (long long)st.st_size, (long long)st.st_mtime,
+                 get_file_extension(dir_entry->d_name));
 
         strcat(json, item);
     }
