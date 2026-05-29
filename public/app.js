@@ -2,9 +2,22 @@
 
 const dropZone = document.getElementById("drop-zone");
 const progressBar = document.getElementById("progress-bar");
+const toggle = document.getElementById("file-icons-toggle");
 const uploadFileName = document.getElementById("upload-file-name");
 const fileInput = document.getElementById("file-input");
 const fileList = document.getElementById("file-list");
+
+let terminalTextColor;
+
+// terminal text color buttons
+document.querySelectorAll(".terminal-color-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    const color = button.dataset.color;
+
+    const terminal = document.getElementById("terminal-container");
+    terminal.style.color = color;
+  });
+});
 
 // file drag & drop handlers: these utilize a hidden input element
 dropZone.addEventListener("click", () => fileInput.click());
@@ -29,9 +42,6 @@ dropZone.addEventListener("drop", (e) => {
 
 fileInput.addEventListener("change", () => uploadFiles(fileInput.files));
 
-/**
- * Get current date + timestamp as a string "YYYY-MM-DD HH.MM.SS"
- */
 function getTimestamp() {
   const now = new Date();
   const date = now.toISOString().slice(0, 10);
@@ -64,7 +74,7 @@ async function deleteFile(file) {
 }
 
 /**
- * Get all uploaded server files and create WebUI entries with download links for each
+ * Get all uploaded server files and create WebUI entries with metadata + download links for each
  */
 async function loadFiles() {
   const response = await fetch("/api/files");

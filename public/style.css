@@ -12,6 +12,50 @@ body {
   border-radius: 10px;
 }
 
+.terminal-wrapper {
+  width: 100%;
+}
+
+.terminal-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.terminal-color-btn {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+}
+
+.terminal-color-btn.c1 {
+  background: #0f0;
+}
+
+.terminal-color-btn.c2 {
+  background: orange;
+}
+
+.terminal-color-btn.c3 {
+  background: #1e90ff;
+}
+
+.terminal-color-btn.c4 {
+  background: #ff5f56;
+}
+
+.terminal-color-btn.c5 {
+  background: darkgray;
+}
+
+.terminal-color-btn.c6 {
+  background: white;
+}
+
 #terminal-container {
   height: 300px;
   overflow-y: auto;
