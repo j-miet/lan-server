@@ -3,11 +3,11 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "../filesystem/mime.h"
-#include "../filesystem/sanitize.h"
-#include "../filesystem/url.h"
+#include "../http/mime.h"
 #include "../http/request.h"
 #include "../http/response.h"
+#include "../security/sanitize.h"
+#include "../utils/url.h"
 #include "files_api.h"
 
 static const char* get_file_extension(const char* name) {

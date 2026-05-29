@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "../config.h"
-#include "context.h"
+#include "../http/context.h"
 
 static const char* find_cookie_header(const char* headers) {
     const char* cookie = strstr(headers, "Cookie:");

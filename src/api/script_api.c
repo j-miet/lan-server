@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../filesystem/json.h"
 #include "../http/request.h"
 #include "../http/response.h"
 #include "../scripting/jobs.h"
 #include "../scripting/scripts.h"
+#include "../utils/json.h"
 
 #define ESCAPED_BUF (MAX_OUTPUT * 2)
 #define JSON_OVERHEAD 64
@@ -16,26 +16,32 @@
 // clang-format off
 
 /**
- * ScriptFields are used to dynamically generate web ui interface. Each has display name, input type (text/select) and
- * if type is 'select', all pre-defined inputs (otherwise NULL array)
- * In general NULL is used for terminating line parsing handle_scripts_api
+ * ScriptFields are used for dynamic argument field generation in web ui interface. Each has 
+ * - display name, 
+ * - input type (text/select)
+ * - descriptions (what this args does)
+ * - pre-defined select field options. If type is 'text', this must be { NULL }
  * 
- * Example 
- * - name: input, "text" means free text input so no fields need to defined => set { NULL } as third parameter
- * - name: message, "select" means dropdown select with fields defined in third parameters which are "hello!" or "bye!".
- *      Then per usual finish this array with NULL terminator
+ * In general NULL is used for terminating line parsing in handle_scripts_api
+ *
+ * Example
+ * - "input" is the arg name, "text" means free text input so no fields need to be defined, "Write something here" is
+ *   the description, { NULL } as last field because type was "text"
+ * - "message" is the arg name, "select" means dropdown select with options defined in fourth parameter, 
+ *   "Pick a message" is the description, final parameter defines the select options which are "hello!" or "bye!". 
+ *    Then per usual finish this option array with NULL terminator as well
  */
-ScriptField script_test[] = {
-    { "input", "text", "Write something here", 1, {NULL}}, 
-    { "message", "select", "Pick a message", 0, { "hello!", "bye!", NULL}},
-    { NULL }
-};
+ScriptField script_test[] = {{"input", "text", "Write something here", 1, {NULL}},
+                             {"message", "select", "Pick a message", 0, {"hello!", "bye!", NULL}},
+                             {NULL}};
+
 
 /**
- * All scripts must be added here in order to use them. Each has 
- * - name (this shows as web ui button name + title)
+ * All scripts must be added here in order to use them in web ui. Each has 
+ * - name (button name + script title)
  * - path (script location relative to root dir)
- * - ScriptField struct for passing args via web UI
+ * - description (short info on what script does)
+ * - ScriptField struct to auto-generate input fields for all args
  */
 ScriptEntry scripts[] = {
     { "test", "./scripts/test.sh", "Test script", script_test},

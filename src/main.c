@@ -1,5 +1,5 @@
+#include "auth/auth.h"
 #include "config.h"
-#include "http/auth.h"
 #include "server.h"
 
 int main() {
