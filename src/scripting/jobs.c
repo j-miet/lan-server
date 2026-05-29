@@ -14,7 +14,8 @@ typedef struct {
 Job jobs[MAX_JOBS];
 int next_job_id = 1;
 
-// pthread_create requires that both the input value and return typ must be void*
+// pthread_create requires that both the input value and return type must be void*
+
 static void* job_worker(void* arg) {
     JobThreadArgs* args = (JobThreadArgs*)arg;
 
@@ -33,13 +34,30 @@ static void* job_worker(void* arg) {
     char line[512];
 
     while (fgets(line, sizeof(line), pipe)) {
-        strncat(job->output, line, sizeof(job->output) - strlen(job->output) - 1);
+        pthread_mutex_lock(&job->lock);
+
+        int space = MAX_OUTPUT - job->output_size - 1;
+
+        int len = strlen(line);
+        if (len > space)
+            len = space;
+
+        memcpy(job->output + job->output_size, line, len);
+
+        job->output_size += len;
+        job->output[job->output_size] = '\0';
+
+        pthread_mutex_unlock(&job->lock);
     }
 
     int result = pclose(pipe);
 
+    pthread_mutex_lock(&job->lock);
+
     job->exit_code = result;
     job->status = result == 0 ? JOB_COMPLETED : JOB_FAILED;
+
+    pthread_mutex_unlock(&job->lock);
 
     free(args);
 
@@ -53,6 +71,10 @@ Job* create_job() {
     for (int i = 0; i < MAX_JOBS; i++) {
         if (jobs[i].id == 0) {
             jobs[i].id = next_job_id++;
+            jobs[i].output_size = 0;
+            jobs[i].output[0] = '\0';
+
+            pthread_mutex_init(&jobs[i].lock, NULL);
 
             return &jobs[i];
         }

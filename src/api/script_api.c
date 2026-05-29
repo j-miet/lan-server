@@ -188,7 +188,7 @@ void handle_script_execute(int client_fd, HttpRequest* req) {
  * Request status of an existing job
  */
 void handle_job_status(int client_fd, const char* path) {
-    int id = atoi(path + strlen("/api/jobs/"));
+    int id = atoi(path + strlen("/api/jobs/status/"));
 
     Job* job = find_job(id);
 
@@ -199,6 +199,8 @@ void handle_job_status(int client_fd, const char* path) {
 
     const char* status = "running";
 
+    pthread_mutex_lock(&job->lock);
+
     if (job->status == JOB_COMPLETED)
         status = "completed";
 
@@ -206,7 +208,7 @@ void handle_job_status(int client_fd, const char* path) {
         status = "failed";
 
     // apply json escaping
-    char escaped[ESCAPED_BUF]; // double the output size to make room for escapes characters
+    char escaped[ESCAPED_BUF]; // double the output size to make room for escape characters
     json_escape(job->output, escaped, sizeof(escaped));
 
     char json[JSON_BUF]; // add json overhead
@@ -215,9 +217,46 @@ void handle_job_status(int client_fd, const char* path) {
              "\"id\":%d,"
              "\"status\":\"%s\","
              "\"exit_code\":%d,"
-             "\"output_size\":\"%s\""
+             "\"output_size\":%d"
              "}",
-             job->id, status, job->exit_code, escaped);
+             job->id, status, job->exit_code, job->output_size);
+
+    pthread_mutex_unlock(&job->lock);
+
+    send_response(client_fd, 200, "OK", "application/json", json);
+}
+
+void handle_job_output(int client_fd, const char* path) {
+    int id = 0;
+    sscanf(path, "/api/jobs/output/%d", &id);
+
+    Job* job = find_job(id);
+
+    if (!job) {
+        send_response(client_fd, 404, "Not Found", "application/json", "{\"error\":\"Job not found\"}");
+        return;
+    }
+
+    pthread_mutex_lock(&job->lock);
+
+    int len = job->output_size;
+
+    if (len > 4096)
+        len = 4096;
+
+    char chunk[4097];
+
+    memcpy(chunk, job->output, len);
+    chunk[len] = '\0';
+
+    pthread_mutex_unlock(&job->lock);
+
+    char escaped[8192];
+    json_escape(chunk, escaped, sizeof(escaped));
+
+    char json[9000];
+
+    snprintf(json, sizeof(json), "{\"data\":\"%s\"}", escaped);
 
     send_response(client_fd, 200, "OK", "application/json", json);
 }

@@ -103,6 +103,10 @@ static void routing_job_status(RequestContext* ctx) {
     handle_job_status(ctx->client_fd, ctx->req->path);
 }
 
+static void routing_job_output(RequestContext* ctx) {
+    handle_job_output(ctx->client_fd, ctx->req->path);
+}
+
 // all routes
 static Route routes[] = {{"GET", "/", DIRECT, PUBLIC, routing_root},
                          {"GET", "/hello", DIRECT, PUBLIC, routing_hello},
@@ -115,7 +119,8 @@ static Route routes[] = {{"GET", "/", DIRECT, PUBLIC, routing_root},
                          {"DELETE", "/api/files", PREFIX, AUTH, routing_delete},
                          {"GET", "/api/scripts", DIRECT, AUTH, routing_script_api},
                          {"POST", "/api/scripts/run", DIRECT, AUTH, routing_script_execute},
-                         {"GET", "/api/jobs", PREFIX, AUTH, routing_job_status},
+                         {"GET", "/api/jobs/status", PREFIX, AUTH, routing_job_status},
+                         {"GET", "/api/jobs/output", PREFIX, AUTH, routing_job_output},
                          {NULL, NULL, DIRECT, PUBLIC, NULL}};
 
 /**

@@ -15,7 +15,10 @@ typedef struct {
     char script_name[64];
     JobStatus status;
     int exit_code;
+
     char output[MAX_OUTPUT];
+    int output_size;
+    pthread_mutex_t lock;
 } Job;
 
 Job* create_job();
