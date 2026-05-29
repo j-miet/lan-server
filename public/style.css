@@ -86,16 +86,104 @@ body {
 
 .file-entry {
   display: flex;
-  padding: 10px;
-  background: #6f6f6f;
-  border-bottom: 1px solid #ccd;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  background: #4f4f4f;
+  border: 1px solid #666;
+  border-radius: 10px;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
 }
 
-.file-entry a,
-.file-entry a:visited {
+.file-entry:hover {
+  background: #5a5a5a;
+  border-color: #888;
+  transform: translateY(-1px);
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.file-info a,
+.file-info a:visited {
   color: rgb(139, 224, 224);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-info a:hover {
+  text-decoration: underline;
+}
+
+.file-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #d0d0d0;
+  opacity: 0.85;
 }
 
 .file-entry button {
   margin-left: auto;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: #b44;
+  color: white;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+
+.file-entry button:hover {
+  background: #d55;
+  transform: scale(1.03);
+}
+
+.file-entry button:active {
+  transform: scale(0.98);
+}
+
+.script-button {
+  padding: 6px 16px;
+  margin-right: 10px;
+  margin-bottom: 5px;
+  border: 1px solid #666;
+  border-radius: 10px;
+  background: #505050;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.script-button:hover {
+  background: #5d5d5d;
+  border-color: #888;
+  transform: translateY(-1px);
+}
+
+.script-button:active {
+  transform: scale(0.98);
+}
+
+#file-list {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 4px;
 }

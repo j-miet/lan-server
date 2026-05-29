@@ -39,18 +39,23 @@ function getTimestamp() {
   return `${date} ${time}`;
 }
 
-/**
- * Download a file from server
- */
-async function downloadFile(file) {
-  const a = document.createElement("a");
-  a.href = `/download/${encodeURIComponent(file)}`;
-  a.download = file;
-  a.click();
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+
+  if (bytes < 1024 * 1024 * 1024)
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
+}
+
+function formatTimestamp(ts) {
+  return new Date(ts * 1000).toLocaleString();
 }
 
 /**
- * Delete a uploaded server file
+ * Delete an uploaded server file
  */
 async function deleteFile(file) {
   const response = await fetch(`/api/files/${file}`, { method: "DELETE" });
@@ -77,17 +82,26 @@ async function loadFiles() {
     const div = document.createElement("div");
     div.className = "file-entry";
 
-    const a = document.createElement("a");
-    a.textContent = file;
-    a.style.cursor = "pointer";
-    a.addEventListener("click", () => downloadFile(file));
+    div.innerHTML = `
+      <div class="file-info">
+        <a href="/download/${encodeURIComponent(file.name)}">
+          ${file.name}
+        </a>
 
-    const btn = document.createElement("button");
-    btn.textContent = "Delete";
-    btn.addEventListener("click", () => deleteFile(file));
+        <div class="file-meta">
+          ${file.type.toUpperCase()}
+          •
+          ${formatFileSize(file.size)}
+          •
+          ${formatTimestamp(file.modified)}
+        </div>
+      </div>
 
-    div.appendChild(a);
-    div.appendChild(btn);
+      <button onclick="deleteFile('${encodeURIComponent(file.name)}')">
+        Delete
+      </button>
+      `;
+
     fileList.appendChild(div);
   }
 }
@@ -343,6 +357,7 @@ async function loadScripts() {
   for (const script of scripts) {
     const btn = document.createElement("button");
 
+    btn.className = "script-button";
     btn.textContent = script.name;
 
     btn.onclick = () => renderScriptForm(script);
@@ -352,6 +367,7 @@ async function loadScripts() {
 }
 
 window.runScript = runScript;
+window.deleteFile = deleteFile;
 
 loadFiles();
 loadScripts();
