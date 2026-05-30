@@ -7,6 +7,7 @@
 #include "../api/upload_api.h"
 #include "../auth/auth.h"
 #include "../config.h"
+#include "../scripting/jobs.h"
 #include "../utils/addr.h"
 #include "context.h"
 #include "response.h"
@@ -139,6 +140,8 @@ void route_request(RequestContext* ctx) {
                 return;
             }
         }
+
+        cleanup_jobs(); // clean-up
 
         r->handler(ctx); // call appropriate route handler
         return;

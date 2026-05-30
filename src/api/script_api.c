@@ -10,10 +10,6 @@
 #include "../utils/json.h"
 #include "../utils/json_builder.h"
 
-#define ESCAPED_BUF (MAX_OUTPUT * 2)
-#define JSON_OVERHEAD 64
-#define JSON_BUF (ESCAPED_BUF + JSON_OVERHEAD)
-
 // clang-format off
 
 /**
@@ -207,11 +203,8 @@ void handle_job_status(int client_fd, const char* path) {
     if (job->status == JOB_FAILED)
         status = "failed";
 
-    // apply json escaping
-    char escaped[ESCAPED_BUF]; // double the output size to make room for escape characters
-    json_escape(job->output, escaped, sizeof(escaped));
+    char json[256];
 
-    char json[JSON_BUF]; // add json overhead
     snprintf(json, sizeof(json),
              "{"
              "\"id\":%d,"
@@ -226,9 +219,14 @@ void handle_job_status(int client_fd, const char* path) {
     send_response(client_fd, 200, "OK", "application/json", json);
 }
 
+/**
+ * Request output data of an existing job
+ */
 void handle_job_output(int client_fd, const char* path) {
     int id = 0;
-    sscanf(path, "/api/jobs/output/%d", &id);
+    int offset = 0;
+
+    sscanf(path, "/api/jobs/output/%d?offset=%d", &id, &offset);
 
     Job* job = find_job(id);
 
@@ -239,24 +237,47 @@ void handle_job_output(int client_fd, const char* path) {
 
     pthread_mutex_lock(&job->lock);
 
-    int len = job->output_size;
+    if (offset > job->output_size)
+        offset = job->output_size;
 
-    if (len > 4096)
-        len = 4096;
+    int chunk_size = job->output_size - offset;
+    const char* chunk = job->output + offset;
 
-    char chunk[4097];
+    char* escaped = malloc(chunk_size * 2 + 1);
 
-    memcpy(chunk, job->output, len);
-    chunk[len] = '\0';
+    if (!escaped) {
+        pthread_mutex_unlock(&job->lock);
+
+        send_response(client_fd, 500, "Internal Server Error", "application/json",
+                      "{\"error\":\"Memory allocation failed\"}");
+
+        return;
+    }
+
+    json_escape(chunk, escaped, chunk_size * 2 + 1);
 
     pthread_mutex_unlock(&job->lock);
 
-    char escaped[8192];
-    json_escape(chunk, escaped, sizeof(escaped));
+    int json_size = strlen(escaped) + 128;
+    char* json = malloc(json_size);
 
-    char json[9000];
+    if (!json) {
+        free(escaped);
 
-    snprintf(json, sizeof(json), "{\"data\":\"%s\"}", escaped);
+        send_response(client_fd, 500, "Internal Server Error", "application/json",
+                      "{\"error\":\"Memory allocation failed\"}");
+
+        return;
+    }
+
+    snprintf(json, json_size,
+             "{\"data\":\"%s\","
+             "\"next_offset\":%d"
+             "}",
+             escaped, job->output_size);
 
     send_response(client_fd, 200, "OK", "application/json", json);
+
+    free(escaped);
+    free(json);
 }

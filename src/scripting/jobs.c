@@ -15,7 +15,6 @@ Job jobs[MAX_JOBS];
 int next_job_id = 1;
 
 // pthread_create requires that both the input value and return type must be void*
-
 static void* job_worker(void* arg) {
     JobThreadArgs* args = (JobThreadArgs*)arg;
 
@@ -36,11 +35,30 @@ static void* job_worker(void* arg) {
     while (fgets(line, sizeof(line), pipe)) {
         pthread_mutex_lock(&job->lock);
 
-        int space = MAX_OUTPUT - job->output_size - 1;
-
         int len = strlen(line);
-        if (len > space)
-            len = space;
+
+        // grow buffer dynamically for larger print outputs
+        while (job->output_size + len + 1 > job->output_capacity) {
+            job->output_capacity *= 2;
+
+            char* new_buf = realloc(job->output, job->output_capacity);
+
+            if (!new_buf) {
+                pthread_mutex_unlock(&job->lock);
+
+                pclose(pipe);
+
+                job->status = JOB_FAILED;
+
+                free(args);
+
+                job->completed_at = time(NULL);
+
+                return NULL;
+            }
+
+            job->output = new_buf;
+        }
 
         memcpy(job->output + job->output_size, line, len);
 
@@ -61,7 +79,20 @@ static void* job_worker(void* arg) {
 
     free(args);
 
+    job->completed_at = time(NULL);
+
     return NULL;
+}
+
+static void destroy_job(Job* job) {
+    if (!job)
+        return;
+
+    free(job->output);
+
+    pthread_mutex_destroy(&job->lock);
+
+    memset(job, 0, sizeof(Job));
 }
 
 /**
@@ -71,7 +102,15 @@ Job* create_job() {
     for (int i = 0; i < MAX_JOBS; i++) {
         if (jobs[i].id == 0) {
             jobs[i].id = next_job_id++;
+
+            jobs[i].output_capacity = 8192;
             jobs[i].output_size = 0;
+
+            jobs[i].output = malloc(jobs[i].output_capacity);
+
+            if (!jobs[i].output)
+                return NULL;
+
             jobs[i].output[0] = '\0';
 
             pthread_mutex_init(&jobs[i].lock, NULL);
@@ -110,4 +149,26 @@ void start_job(Job* job, const char* command) {
     pthread_t thread;
     pthread_create(&thread, NULL, job_worker, args);
     pthread_detach(thread);
+}
+
+/**
+ * Properly dispose of job structs
+ */
+void cleanup_jobs() {
+    time_t now = time(NULL);
+
+    for (int i = 0; i < MAX_JOBS; i++) {
+        Job* job = &jobs[i];
+
+        if (job->id == 0)
+            continue;
+
+        if (job->status == JOB_RUNNING)
+            continue;
+
+        // remove jobs that are finished and older than 5 minutes
+        if (now - job->completed_at > 300) {
+            destroy_job(job);
+        }
+    }
 }
