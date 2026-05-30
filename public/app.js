@@ -182,60 +182,81 @@ async function runScript(name, payload = null) {
   // create job element
   const jobElem = document.createElement("div");
   jobElem.className = "job-output";
+
+  // separate header and body
+  const headerElem = document.createElement("div");
+  headerElem.className = "job-header";
+
+  const bodyElem = document.createElement("pre");
+  bodyElem.className = "job-body";
+
+  jobElem.appendChild(headerElem);
+  jobElem.appendChild(bodyElem);
+
   outputElem.appendChild(jobElem);
 
   const startedAt = getTimestamp();
-  jobElem.textContent = `[${startedAt}] $ ${name}\n`;
+
+  headerElem.textContent = `[${startedAt}] $ ${name}\n` + `[ STARTING ]`;
 
   terminal.scrollTop = terminal.scrollHeight;
-
-  const options = { method: "POST" };
 
   if (!payload) payload = {};
 
   payload.script = name;
-  options.body = JSON.stringify(payload);
 
-  const response = await fetch(`/api/scripts/run`, options);
-  const job = await response.json();
+  const options = {
+    method: "POST",
+    body: JSON.stringify(payload),
+  };
 
-  jobElem.textContent += `[ JOB ${job.job_id} STARTED ]\n`;
-
-  let finished = false;
-
-  // poll script updates via job id
   try {
+    const response = await fetch("/api/scripts/run", options);
+    const job = await response.json();
+
+    let finished = false;
+    let offset = 0;
+
     while (!finished) {
       const statusRes = await fetch(`/api/jobs/status/${job.job_id}`);
       const status = await statusRes.json();
 
-      const outputRes = await fetch(`/api/jobs/output/${job.job_id}`);
+      const outputRes = await fetch(
+        `/api/jobs/output/${job.job_id}?offset=${offset}`,
+      );
       const output = await outputRes.json();
 
-      jobElem.textContent =
-        `[${startedAt}] $ ${name}\n` +
-        `[ JOB ${job.job_id} | ${status.status} ]\n\n` +
-        output.data;
+      if (output.data.length > 0) {
+        bodyElem.textContent += output.data;
 
-      terminal.scrollTop = terminal.scrollHeight;
+        offset = output.next_offset;
+
+        terminal.scrollTop = terminal.scrollHeight;
+      }
+
+      headerElem.textContent =
+        `[${startedAt}] $ ${name}\n` +
+        `[ JOB ${job.job_id} | ${status.status.toUpperCase()} ]`;
 
       if (status.status === "completed" || status.status === "failed") {
-        jobElem.textContent +=
-          status.status === "completed" ? "\n[ SUCCESS ]" : "\n[ FAILED ]";
+        const label =
+          status.status === "completed" ? "[ SUCCESS ]" : "[ FAILED ]";
+
+        bodyElem.textContent += `\n${label}\n`;
+        bodyElem.textContent += "\n--------------------------------\n";
 
         finished = true;
       }
 
-      await new Promise((r) => setTimeout(r, 500)); // polling delay
+      await new Promise((r) => setTimeout(r, 500));
     }
   } catch (err) {
-    jobElem.textContent += `\n[ FAILED ] ${err}\n`;
+    bodyElem.textContent += `\n[ FAILED ] ${err}\n`;
   }
 
-  jobElem.textContent += "\n--------------------------------\n";
-
   terminal.scrollTop = terminal.scrollHeight;
-  loadFiles(); // refresh server files
+
+  loadFiles();
 }
 
 /**
