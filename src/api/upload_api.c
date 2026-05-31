@@ -6,6 +6,9 @@
 #include "../http/response.h"
 #include "upload_api.h"
 
+// tracks how many uploads this session. Used for producing unique temp files
+int upload_counter = 0;
+
 /**
  * Uploads a file to server via streaming
  */
@@ -51,19 +54,22 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
     memcpy(filename, filename_start, filename_length);
     filename[filename_length] = '\0';
 
-    // output file
+    // output: temp and actual files
     char full_path[512];
-    long long initial_file_bytes = header_size - (file_data_start - headers); // actual file bytes in memory
+    char temp_path[512];
 
     snprintf(full_path, sizeof(full_path), "uploads/%s", filename);
+    snprintf(temp_path, sizeof(temp_path), "uploads/%s.uploading.%d", filename, upload_counter);
+    upload_counter++;
 
-    FILE* fp = fopen(full_path, "wb");
+    FILE* fp = fopen(temp_path, "wb");
     if (!fp) {
         send_text_response(client_fd, 500, "Internal Server Error", "Failed to open file");
         return;
     };
 
-    fwrite(file_data_start, 1, initial_file_bytes, fp); // write initial bytes
+    long long initial_file_bytes = header_size - (file_data_start - headers); // actual file bytes in memory
+    fwrite(file_data_start, 1, initial_file_bytes, fp);                       // write initial bytes
 
     // then compute remaining bytes and use a recv loop to write into file
     long long remaining = req->content_length - already_read;
@@ -73,8 +79,11 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
         int to_read = remaining < (long long)sizeof(buffer) ? (int)remaining : (int)sizeof(buffer);
         int received = recv(client_fd, buffer, to_read, 0);
 
-        if (received <= 0)
-            break;
+        if (received <= 0) {
+            fclose(fp);
+            remove(temp_path); // temp file also removed on failure
+            return;
+        }
 
         fwrite(buffer, 1, received, fp);
 
@@ -83,7 +92,17 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
 
     fclose(fp);
 
-    trim_multipart_footer(full_path, boundary); // remove multipart boundary from the end of body
+    // remove multipart boundary/footer from TEMP file
+    trim_multipart_footer(temp_path, boundary);
 
-    send_response(client_fd, 200, "OK", "application/json", "{\"success:\":true}");
+    // atomically replace final file
+    if (rename(temp_path, full_path) != 0) {
+        remove(temp_path);
+
+        send_text_response(client_fd, 500, "Internal Server Error", "Failed to finalize upload");
+
+        return;
+    }
+
+    send_response(client_fd, 200, "OK", "application/json", "{\"success\":true}");
 }

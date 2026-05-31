@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -10,6 +11,9 @@
 #include "../utils/common.h"
 #include "../utils/json_builder.h"
 #include "files_api.h"
+
+// global mutex: only for file deletes
+pthread_mutex_t fileapi_mutex;
 
 static const char* get_file_extension(const char* name) {
     const char* ext = strrchr(name, '.');
@@ -41,6 +45,9 @@ void handle_files_api(int client_fd) {
     int first = 1;
 
     while ((dir_entry = readdir(dir)) != NULL) {
+        if (strstr(dir_entry->d_name, ".uploading")) // hide files that are currently getting uploaded
+            continue;
+
         if (strcmp(dir_entry->d_name, ".") == 0 || strcmp(dir_entry->d_name, "..") == 0)
             continue;
 
@@ -136,10 +143,16 @@ void handle_delete_file(int client_fd, const char* path) {
     char full_path[512];
     snprintf(full_path, sizeof(full_path), "uploads/%s", decoded);
 
+    pthread_mutex_lock(&fileapi_mutex);
+
     if (remove(full_path) != 0) {
         send_text_response(client_fd, 404, "Not Found", "Failed to delete file");
+
+        pthread_mutex_unlock(&fileapi_mutex);
         return;
     }
+
+    pthread_mutex_unlock(&fileapi_mutex);
 
     send_response(client_fd, 200, "OK", "application/json", "{\"success\": true}");
 }

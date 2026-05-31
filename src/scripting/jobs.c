@@ -14,6 +14,9 @@ typedef struct {
 Job jobs[MAX_JOBS];
 int next_job_id = 1;
 
+// global lock for creating jobs
+pthread_mutex_t jobs_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 // pthread_create requires that both the input value and return type must be void*
 static void* job_worker(void* arg) {
     JobThreadArgs* args = (JobThreadArgs*)arg;
@@ -84,6 +87,8 @@ static void* job_worker(void* arg) {
 }
 
 static void destroy_job(Job* job) {
+    pthread_mutex_lock(&jobs_mutex);
+
     if (!job)
         return;
 
@@ -92,12 +97,16 @@ static void destroy_job(Job* job) {
     pthread_mutex_destroy(&job->lock);
 
     memset(job, 0, sizeof(Job));
+
+    pthread_mutex_unlock(&jobs_mutex);
 }
 
 /**
  * Create a new job
  */
 Job* create_job() {
+    pthread_mutex_lock(&jobs_mutex);
+
     for (int i = 0; i < MAX_JOBS; i++) {
         if (jobs[i].id == 0) {
             jobs[i].id = next_job_id++;
@@ -115,6 +124,8 @@ Job* create_job() {
             return &jobs[i];
         }
     }
+
+    pthread_mutex_unlock(&jobs_mutex);
 
     return NULL;
 }
