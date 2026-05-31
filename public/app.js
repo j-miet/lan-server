@@ -8,6 +8,10 @@ const fileInput = document.getElementById("file-input");
 const fileList = document.getElementById("file-list");
 
 let terminalTextColor;
+let allFiles = [];
+let currentSort = "name";
+let sortAscending = true;
+let currentSearch = "";
 
 // terminal text color buttons
 document.querySelectorAll(".terminal-color-btn").forEach((button) => {
@@ -42,6 +46,39 @@ dropZone.addEventListener("drop", (e) => {
 
 fileInput.addEventListener("change", () => uploadFiles(fileInput.files));
 
+// toolbar listeners
+document.getElementById("file-search").addEventListener("input", (e) => {
+  currentSearch = e.target.value;
+
+  renderFiles();
+});
+
+document.getElementById("file-sort").addEventListener("change", (e) => {
+  currentSort = e.target.value;
+
+  renderFiles();
+});
+
+document.getElementById("file-sort-order").addEventListener("click", () => {
+  sortAscending = !sortAscending;
+
+  document.getElementById("file-sort-order").textContent = sortAscending
+    ? "↑"
+    : "↓";
+
+  renderFiles();
+});
+
+// this will explicitly flush the search bar contents
+window.addEventListener("load", () => {
+  const search = document.getElementById("file-search");
+
+  search.value = "";
+  currentSearch = "";
+
+  renderFiles();
+});
+
 function getTimestamp() {
   const now = new Date();
   const date = now.toISOString().slice(0, 10);
@@ -64,6 +101,70 @@ function formatTimestamp(ts) {
   return new Date(ts * 1000).toLocaleString();
 }
 
+function renderFiles() {
+  fileList.innerHTML = "";
+
+  let filtered = [...allFiles];
+
+  // search filter
+  if (currentSearch.trim() !== "") {
+    const q = currentSearch.toLowerCase();
+
+    filtered = filtered.filter((file) => file.name.toLowerCase().includes(q));
+  }
+
+  // sorting
+  filtered.sort((a, b) => {
+    let result = 0;
+
+    switch (currentSort) {
+      case "name":
+        result = a.name.localeCompare(b.name);
+        break;
+
+      case "type":
+        result = a.type.localeCompare(b.type);
+
+      case "size":
+        result = a.size - b.size;
+        break;
+
+      case "modified":
+        result = a.modified - b.modified;
+        break;
+    }
+
+    return sortAscending ? result : -result;
+  });
+
+  for (const file of filtered) {
+    const div = document.createElement("div");
+    div.className = "file-entry";
+
+    div.innerHTML = `
+      <div class="file-info">
+        <a href="/download/${encodeURIComponent(file.name)}" title="${encodeURIComponent(file.name)}">
+          ${file.name}
+        </a>
+
+        <div class="file-meta">
+          ${file.type.toUpperCase()}
+          •
+          ${formatFileSize(file.size)}
+          •
+          ${formatTimestamp(file.modified)}
+        </div>
+      </div>
+
+      <button onclick="deleteFile('${encodeURIComponent(file.name)}')">
+        Delete
+      </button>
+      `;
+
+    fileList.appendChild(div);
+  }
+}
+
 /**
  * Delete an uploaded server file
  */
@@ -84,36 +185,9 @@ async function loadFiles() {
     return;
   }
 
-  const files = await response.json();
+  allFiles = await response.json();
 
-  fileList.innerHTML = "";
-
-  for (const file of files) {
-    const div = document.createElement("div");
-    div.className = "file-entry";
-
-    div.innerHTML = `
-      <div class="file-info">
-        <a href="/download/${encodeURIComponent(file.name)}">
-          ${file.name}
-        </a>
-
-        <div class="file-meta">
-          ${file.type.toUpperCase()}
-          •
-          ${formatFileSize(file.size)}
-          •
-          ${formatTimestamp(file.modified)}
-        </div>
-      </div>
-
-      <button onclick="deleteFile('${encodeURIComponent(file.name)}')">
-        Delete
-      </button>
-      `;
-
-    fileList.appendChild(div);
-  }
+  renderFiles();
 }
 
 /**
@@ -248,7 +322,7 @@ async function runScript(name, payload = null) {
         finished = true;
       }
 
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 300));
     }
   } catch (err) {
     bodyElem.textContent += `\n[ FAILED ] ${err}\n`;

@@ -34,6 +34,7 @@
 
         <div id="terminal-container">
           -- Script window --
+          <p></p>
           <div id="script-output"></div>
         </div>
       </div>
@@ -45,6 +46,7 @@
 
       <h2>Files</h2>
       <div id="drop-zone">Drag files here for uploading</div>
+      <input type="file" id="file-input" hidden />
 
       <div id="upload-status">
         <div id="progress-container">
@@ -54,7 +56,18 @@
         <span id="upload-file-name"></span>
       </div>
 
-      <input type="file" id="file-input" hidden />
+      <div class="file-toolbar">
+        <input type="text" id="file-search" placeholder="Search files..." />
+
+        <select id="file-sort">
+          <option value="name">Name</option>
+          <option value="type">Type</option>
+          <option value="size">Size</option>
+          <option value="modified">Date</option>
+        </select>
+
+        <button id="file-sort-order">↑</button>
+      </div>
 
       <div id="file-list">Loading...</div>
     </div>
