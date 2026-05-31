@@ -51,10 +51,8 @@ ScriptEntry scripts[] = {
  * Create a json response from ScriptEntry struct
  */
 void handle_scripts_api(int client_fd) {
-    char json[16384];
-
     JsonBuilder jb;
-
+    char json[16384];
     json_init(&jb, json, sizeof(json));
 
     json_append(&jb, "[");
@@ -63,9 +61,8 @@ void handle_scripts_api(int client_fd) {
         if (i > 0)
             json_append(&jb, ",");
 
-        json_append(&jb, "{");
-
         json_append(&jb,
+                    "{"
                     "\"name\":\"%s\","
                     "\"description\":\"%s\",",
                     scripts[i].name, scripts[i].description);
@@ -77,7 +74,6 @@ void handle_scripts_api(int client_fd) {
                 json_append(&jb, ",");
 
             ScriptField* field = &scripts[i].fields[j];
-
             json_append(&jb,
                         "{"
                         "\"name\":\"%s\","
@@ -103,8 +99,7 @@ void handle_scripts_api(int client_fd) {
             json_append(&jb, "}");
         }
 
-        json_append(&jb, "]");
-        json_append(&jb, "}");
+        json_append(&jb, "]}");
     }
 
     json_append(&jb, "]");
@@ -126,7 +121,6 @@ void handle_script_execute(int client_fd, HttpRequest* req) {
     }
 
     Job* job = create_job();
-
     if (!job) {
         send_response(client_fd, 500, "Internal Server Error", "application/json",
                       "{\"error\":\"No job slots available\"}");
@@ -187,7 +181,6 @@ void handle_job_status(int client_fd, const char* path) {
     int id = atoi(path + strlen("/api/jobs/status/"));
 
     Job* job = find_job(id);
-
     if (!job) {
         send_response(client_fd, 404, "Not Found", "application/json", "{\"error\":\"Job not found\"}");
         return;
@@ -229,7 +222,6 @@ void handle_job_output(int client_fd, const char* path) {
     sscanf(path, "/api/jobs/output/%d?offset=%d", &id, &offset);
 
     Job* job = find_job(id);
-
     if (!job) {
         send_response(client_fd, 404, "Not Found", "application/json", "{\"error\":\"Job not found\"}");
         return;
@@ -244,7 +236,6 @@ void handle_job_output(int client_fd, const char* path) {
     const char* chunk = job->output + offset;
 
     char* escaped = malloc(chunk_size * 2 + 1);
-
     if (!escaped) {
         pthread_mutex_unlock(&job->lock);
 
@@ -260,7 +251,6 @@ void handle_job_output(int client_fd, const char* path) {
 
     int json_size = strlen(escaped) + 128;
     char* json = malloc(json_size);
-
     if (!json) {
         free(escaped);
 

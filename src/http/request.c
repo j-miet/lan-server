@@ -32,12 +32,10 @@ int read_http_headers(int client_fd, char* buffer, int max_size) {
  */
 long long get_content_length(const char* raw) {
     const char* header = strstr(raw, "Content-Length");
-
     if (!header)
         return 0;
 
     long long length = 0;
-
     sscanf(header, "Content-Length: %lld", &length);
 
     return length;
@@ -51,7 +49,6 @@ int parse_http_request(const char* raw, HttpRequest* req) {
     char request_line[1024];
 
     const char* line_end = strstr(raw, "\r\n");
-
     if (!line_end)
         return -1;
 
@@ -61,7 +58,6 @@ int parse_http_request(const char* raw, HttpRequest* req) {
     request_line[len] = '\0';
 
     int parsed = sscanf(request_line, "%7s %255s %15s", req->method, req->path, req->version);
-
     if (parsed != 3)
         return -1;
 
@@ -69,7 +65,6 @@ int parse_http_request(const char* raw, HttpRequest* req) {
 
     // req body still points to recv buffer, could be copied separately
     const char* body_start = strstr(raw, "\r\n\r\n");
-
     if (body_start) {
         req->body = body_start + 4;
     } else {

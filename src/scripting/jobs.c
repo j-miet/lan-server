@@ -21,7 +21,6 @@ static void* job_worker(void* arg) {
     Job* job = args->job;
 
     FILE* pipe = popen(args->command, "r");
-
     if (!pipe) {
         job->status = JOB_FAILED;
 
@@ -102,12 +101,10 @@ Job* create_job() {
     for (int i = 0; i < MAX_JOBS; i++) {
         if (jobs[i].id == 0) {
             jobs[i].id = next_job_id++;
-
             jobs[i].output_capacity = 8192;
             jobs[i].output_size = 0;
 
             jobs[i].output = malloc(jobs[i].output_capacity);
-
             if (!jobs[i].output)
                 return NULL;
 
@@ -142,7 +139,6 @@ void start_job(Job* job, const char* command) {
     job->output[0] = '\0';
 
     JobThreadArgs* args = malloc(sizeof(JobThreadArgs));
-
     args->job = job;
     strcpy(args->command, command);
 

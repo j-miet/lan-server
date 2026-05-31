@@ -24,7 +24,6 @@ void json_append(JsonBuilder* jb, const char* fmt, ...) {
         return;
 
     va_list args;
-
     va_start(args, fmt);
 
     int written = vsnprintf(jb->buffer + jb->used, jb->size - jb->used, fmt, args);

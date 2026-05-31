@@ -47,11 +47,9 @@ void json_escape(const char* input, char* output, int max) {
  */
 int json_get_string(const char* json, const char* key, char* output, int size) {
     char pattern[64];
-
     snprintf(pattern, sizeof(pattern), "\"%s\":\"", key);
 
     const char* start = strstr(json, pattern);
-
     if (!start)
         return -1;
 

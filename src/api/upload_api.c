@@ -11,7 +11,6 @@
  */
 void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, int header_size) {
     const char* body_start = strstr(headers, "\r\n\r\n");
-
     if (!body_start)
         return;
 
@@ -19,15 +18,14 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
 
     // how many upload bytes already in memory: this includes multipart headers + initial file bytes
     int already_read = header_size - (body_start - headers);
-    char boundary[256];
 
+    char boundary[256];
     if (get_boundary(headers, boundary, sizeof(boundary)) < 0) {
         send_text_response(client_fd, 400, "Bad Request", "Missing boundary");
         return;
     }
 
     const char* file_data_start = strstr(body_start, "\r\n\r\n"); // find multipart header end
-
     if (!file_data_start) {
         send_text_response(client_fd, 400, "Bad Request", "Invalid multipart");
         return;
@@ -35,9 +33,7 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
 
     file_data_start += 4; // move over multipart header end to access raw file bytes
 
-    char filename[256];
     const char* filename_start = strstr(body_start, "filename=\"");
-
     if (!filename_start)
         return;
 
@@ -50,6 +46,8 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
         return;
 
     int filename_length = filename_end - filename_start;
+    char filename[256];
+
     memcpy(filename, filename_start, filename_length);
     filename[filename_length] = '\0';
 
@@ -60,7 +58,6 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
     snprintf(full_path, sizeof(full_path), "uploads/%s", filename);
 
     FILE* fp = fopen(full_path, "wb");
-
     if (!fp) {
         send_text_response(client_fd, 500, "Internal Server Error", "Failed to open file");
         return;

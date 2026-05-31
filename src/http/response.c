@@ -84,12 +84,10 @@ void send_response_clear_cookie(int client_fd) {
  */
 void send_file_stream(int client_fd, const char* path, const char* content_type) {
     FILE* file = fopen(path, "rb");
-
     if (!file)
         return;
 
     struct stat st;
-
     if (stat(path, &st) != 0) {
         fclose(file);
         return;
@@ -115,12 +113,10 @@ void send_file_stream(int client_fd, const char* path, const char* content_type)
 
     while (1) {
         size_t bytes_read = fread(buffer, 1, sizeof(buffer), file);
-
         if (bytes_read == 0)
             break;
 
         size_t total_sent = 0;
-
         while (total_sent < bytes_read) {
             int sent = send(client_fd, buffer + total_sent, bytes_read - total_sent, 0);
 

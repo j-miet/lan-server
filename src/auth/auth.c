@@ -7,7 +7,6 @@
 
 static const char* find_cookie_header(const char* headers) {
     const char* cookie = strstr(headers, "Cookie:");
-
     if (!cookie)
         return NULL;
 
@@ -20,12 +19,10 @@ static const char* find_cookie_header(const char* headers) {
  */
 int authenticate_request(RequestContext* ctx) {
     const char* cookie = find_cookie_header(ctx->raw_headers);
-
     if (!cookie)
         return 0;
 
     const char* t = strstr(cookie, "token=");
-
     if (!t)
         return 0;
 

@@ -13,7 +13,6 @@
 
 static const char* get_file_extension(const char* name) {
     const char* ext = strrchr(name, '.');
-
     if (!ext || ext == name)
         return "";
 
@@ -32,9 +31,8 @@ void handle_files_api(int client_fd) {
     }
 
     JsonBuilder jb;
-
-    char json[65536]; // only for json_init, don't touch these manually after
-
+    // TODO: make json buffer resize dynamically; if server has tons of files this will get filled eventually
+    char json[65536]; // only for json_init, don't touch this manually after
     json_init(&jb, json, sizeof(json));
 
     json_append(&jb, "[");
@@ -47,11 +45,9 @@ void handle_files_api(int client_fd) {
             continue;
 
         char full_path[512];
-
         snprintf(full_path, sizeof(full_path), "uploads/%s", dir_entry->d_name);
 
         struct stat st;
-
         if (stat(full_path, &st) != 0)
             continue;
 
@@ -107,7 +103,6 @@ void handle_delete_file(int client_fd, const char* path) {
     const char* filename = path + 11;
 
     char decoded[256];
-
     url_decode(decoded, filename);
 
     if (!is_safe_path(decoded)) {

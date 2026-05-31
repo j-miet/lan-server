@@ -16,14 +16,12 @@ static void trim_newline(char* str) {
  */
 int load_config(const char* path) {
     FILE* file = fopen(path, "r");
-
     if (!file) {
         printf("Failed to open config: %s\n", path);
         return -1;
     }
 
     char line[512];
-
     while (fgets(line, sizeof(line), file)) {
         trim_newline(line);
 

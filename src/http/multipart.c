@@ -13,7 +13,6 @@
  */
 int get_boundary(const char* raw, char* boundary, int size) {
     const char* header = strstr(raw, "boundary=");
-
     if (!header)
         return -1;
 
@@ -33,7 +32,6 @@ int get_boundary(const char* raw, char* boundary, int size) {
  */
 void trim_multipart_footer(const char* path, const char* boundary) {
     FILE* fp = fopen(path, "rb+");
-
     if (!fp)
         return;
 
@@ -51,7 +49,6 @@ void trim_multipart_footer(const char* path, const char* boundary) {
     snprintf(marker, sizeof(marker), "\r\n--%s", boundary);
 
     char* boundary_pos = strstr(tail, marker);
-
     if (!boundary_pos) {
         fclose(fp);
         return;

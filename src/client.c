@@ -15,12 +15,10 @@ void handle_client(int client_fd) {
 
     char header_buffer[16384];
     int header_size = read_http_headers(client_fd, header_buffer, sizeof(header_buffer) - 1);
-
     if (header_size < 0)
         return;
 
     HttpRequest req;
-
     if (parse_http_request(header_buffer, &req) < 0) {
         printf("Invalid HTTP request\n");
         return;
