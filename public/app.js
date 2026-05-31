@@ -1,11 +1,26 @@
 "use strict";
 
 const dropZone = document.getElementById("drop-zone");
-const progressBar = document.getElementById("progress-bar");
 const toggle = document.getElementById("file-icons-toggle");
-const uploadFileName = document.getElementById("upload-file-name");
 const fileInput = document.getElementById("file-input");
 const fileList = document.getElementById("file-list");
+
+// add any file formats here you wish to display in previews as plain text
+const TEXT_TYPES = [
+  "txt",
+  "json",
+  "log",
+  "md",
+  // languages
+  "c",
+  "h",
+  "cpp",
+  "hpp",
+  "py",
+  "js",
+  "ts",
+  "lua",
+];
 
 let terminalTextColor;
 let allFiles = [];
@@ -53,6 +68,7 @@ document.getElementById("file-search").addEventListener("input", (e) => {
   renderFiles();
 });
 
+document.getElementById("file-sort").value = "name"; // force name field as default
 document.getElementById("file-sort").addEventListener("change", (e) => {
   currentSort = e.target.value;
 
@@ -106,31 +122,28 @@ function togglePreview(button, filename, type) {
     ".file-preview-container",
   );
 
-  // properly close other previews (especially videos) to prevent
-  document.querySelectorAll("video").forEach((video) => {
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
-  });
+  const isOpen = container.dataset.open === "1";
 
+  // close all previews
   document.querySelectorAll(".file-preview-container").forEach((c) => {
     c.innerHTML = "";
+    c.dataset.open = "0";
   });
 
   document.querySelectorAll(".preview-btn").forEach((btn) => {
     btn.textContent = "Preview";
   });
 
-  // toggle close
-  if (container.innerHTML !== "") {
-    container.innerHTML = "";
+  if (isOpen) {
+    container.dataset.open = "0";
     button.textContent = "Preview";
     return;
   }
 
+  container.dataset.open = "1";
   button.textContent = "Close";
 
-  const url = `/preview/${filename}`;
+  const url = `/preview/${encodeURIComponent(filename)}`;
 
   // images
   if (["png", "jpg", "jpeg", "gif", "webp"].includes(type)) {
@@ -288,6 +301,9 @@ async function loadFiles() {
 
 /**
  * Handles a single file upload with progress bar updates
+ * Produces separate bars for each queue e.g.
+ * - upload 3 files together => 1. queue
+ * - add one more file to download separately => 2. queue
  */
 async function uploadFile(file) {
   return new Promise((resolve, reject) => {
@@ -299,31 +315,75 @@ async function uploadFile(file) {
 
     xhr.open("POST", "/api/upload");
 
-    uploadFileName.innerHTML = file.name;
+    // create upload ui item
+    const queue = document.getElementById("upload-queue");
 
+    const item = document.createElement("div");
+    item.className = "upload-item";
+
+    const nameElem = document.createElement("div");
+    nameElem.className = "upload-name";
+    nameElem.textContent = file.name;
+
+    const progressBg = document.createElement("div");
+    progressBg.className = "upload-progress-bg";
+
+    const progressFill = document.createElement("div");
+    progressFill.className = "upload-progress-fill";
+
+    const actions = document.createElement("div");
+    actions.className = "upload-actions";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "upload-cancel-btn";
+    cancelBtn.textContent = "Cancel";
+
+    actions.appendChild(cancelBtn);
+
+    progressBg.appendChild(progressFill);
+
+    item.appendChild(nameElem);
+    item.appendChild(progressBg);
+    item.appendChild(actions);
+
+    queue.appendChild(item);
+
+    // progress updates
     xhr.upload.addEventListener("progress", (e) => {
       if (!e.lengthComputable) return;
 
       const pct = (e.loaded / e.total) * 100;
 
-      progressBar.style.width = pct + "%";
+      progressFill.style.width = pct + "%";
     });
 
     xhr.addEventListener("load", () => {
-      progressBar.style.width = "100%";
+      progressFill.style.width = "100%";
 
       setTimeout(() => {
-        progressBar.style.width = "0%";
-        uploadFileName.innerHTML = "";
-      }, 500);
+        item.remove();
+      }, 1000);
 
       resolve();
     });
 
     xhr.addEventListener("error", () => {
+      item.remove();
+
       alert("Upload failed: " + file.name);
 
       reject();
+    });
+
+    // upload cancel
+    cancelBtn.addEventListener("click", () => {
+      xhr.abort();
+
+      item.remove();
+    });
+
+    xhr.addEventListener("abort", () => {
+      console.log("Upload cancelled:", file.name);
     });
 
     xhr.send(formData);

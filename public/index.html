@@ -46,21 +46,17 @@
 
       <h2>Files</h2>
       <div id="drop-zone">Drag files here for uploading</div>
-      <input type="file" id="file-input" hidden />
+      <input type="file" id="file-input" multiple hidden />
 
       <div id="upload-status">
-        <div id="progress-container">
-          <div id="progress-bar"></div>
-        </div>
-
-        <span id="upload-file-name"></span>
+        <div id="upload-queue"></div>
       </div>
 
       <div class="file-toolbar">
         <input type="text" id="file-search" placeholder="Search files..." />
 
         <select id="file-sort">
-          <option value="name">Name</option>
+          <option value="name" selected>Name</option>
           <option value="type">Type</option>
           <option value="size">Size</option>
           <option value="modified">Date</option>

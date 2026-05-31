@@ -157,19 +157,70 @@ body {
 }
 
 /* upload progress bar */
-#progress-container {
-  width: 100px;
-  height: 25px;
-  background: #ddd;
-  border-radius: 5px;
+#upload-queue {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.upload-item {
+  background: #5f5f5f;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #777;
+}
+
+.upload-name {
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: white;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upload-progress-bg {
+  width: 100%;
+  height: 10px;
+
+  background: #2b2b2b;
+
+  border-radius: 999px;
+
   overflow: hidden;
 }
 
-#progress-bar {
+.upload-progress-fill {
   width: 0%;
   height: 100%;
-  background: #4caf50;
-  transition: width 0.1s;
+
+  background: limegreen;
+
+  transition: width 0.15s linear;
+}
+
+/* upload cancel */
+.upload-actions {
+  margin-top: 8px;
+}
+
+.upload-cancel-btn {
+  background: #a94444;
+  color: white;
+
+  border: none;
+  border-radius: 4px;
+
+  padding: 5px 10px;
+
+  cursor: pointer;
+}
+
+.upload-cancel-btn:hover {
+  background: #c85c5c;
 }
 
 /* file toolbar */
