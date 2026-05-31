@@ -4,7 +4,7 @@
 #include "api/upload_api.h"
 #include "client.h"
 #include "http/routing.h"
-#include "utils/addr.h"
+#include "utils/common.h"
 
 /**
  * Process a client request by reading, parsing and sending it to router

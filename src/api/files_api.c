@@ -7,8 +7,8 @@
 #include "../http/request.h"
 #include "../http/response.h"
 #include "../security/sanitize.h"
+#include "../utils/common.h"
 #include "../utils/json_builder.h"
-#include "../utils/url.h"
 #include "files_api.h"
 
 static const char* get_file_extension(const char* name) {
@@ -92,14 +92,13 @@ void handle_download(int client_fd, const char* path) {
 
     const char* content_type = get_content_type(full_path);
 
-    send_file_stream(client_fd, full_path, content_type, 1);
+    send_file_stream(client_fd, full_path, content_type, NULL, 1);
 }
 
 /**
  * Handle a file preview request from client
  */
-void handle_preview(int client_fd, const char* path) {
-    // this code is pretty much the same as handle_download, just send_file_stream doesn't force the download
+void handle_preview(int client_fd, const char* path, const char* headers) {
     char decoded[256];
     url_decode(decoded, path + 9); // '/preview/' has length 9
 
@@ -113,7 +112,11 @@ void handle_preview(int client_fd, const char* path) {
 
     const char* content_type = get_content_type(full_path);
 
-    send_file_stream(client_fd, full_path, content_type, 0);
+    char range[128];
+    range[0] = '\0';
+    get_header(headers, "Range", range, sizeof(range));
+
+    send_file_stream(client_fd, full_path, content_type, range[0] ? range : NULL, 0);
 }
 
 /**
@@ -155,7 +158,7 @@ void serve_static_file(int client_fd, const char* path) {
     snprintf(full_path, sizeof(full_path), "public%s", path);
     const char* content_type = get_content_type(full_path);
 
-    send_file_stream(client_fd, full_path, content_type, 0);
+    send_file_stream(client_fd, full_path, content_type, NULL, 0);
 }
 
 /**

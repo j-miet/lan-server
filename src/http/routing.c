@@ -8,7 +8,7 @@
 #include "../auth/auth.h"
 #include "../config.h"
 #include "../scripting/jobs.h"
-#include "../utils/addr.h"
+#include "../utils/common.h"
 #include "context.h"
 #include "response.h"
 #include "routing.h"
@@ -81,7 +81,7 @@ static void routing_download(RequestContext* ctx) {
 }
 
 static void routing_preview(RequestContext* ctx) {
-    handle_preview(ctx->client_fd, ctx->req->path);
+    handle_preview(ctx->client_fd, ctx->req->path, ctx->raw_headers);
 }
 
 static void routing_files(RequestContext* ctx) {
