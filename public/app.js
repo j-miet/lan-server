@@ -106,6 +106,21 @@ function togglePreview(button, filename, type) {
     ".file-preview-container",
   );
 
+  // properly close other previews (especially videos) to prevent
+  document.querySelectorAll("video").forEach((video) => {
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+  });
+
+  document.querySelectorAll(".file-preview-container").forEach((c) => {
+    c.innerHTML = "";
+  });
+
+  document.querySelectorAll(".preview-btn").forEach((btn) => {
+    btn.textContent = "Preview";
+  });
+
   // toggle close
   if (container.innerHTML !== "") {
     container.innerHTML = "";
