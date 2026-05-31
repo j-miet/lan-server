@@ -80,6 +80,10 @@ static void routing_download(RequestContext* ctx) {
     handle_download(ctx->client_fd, ctx->req->path);
 }
 
+static void routing_preview(RequestContext* ctx) {
+    handle_preview(ctx->client_fd, ctx->req->path);
+}
+
 static void routing_files(RequestContext* ctx) {
     handle_files_api(ctx->client_fd);
 }
@@ -115,6 +119,7 @@ static Route routes[] = {{"GET", "/", DIRECT, PUBLIC, routing_root},
                          {"POST", "/api/logout", DIRECT, PUBLIC, routing_logout},
                          {"GET", "/index.html", DIRECT, PUBLIC, routing_index},
                          {"GET", "/download", PREFIX, AUTH, routing_download},
+                         {"GET", "/preview", PREFIX, AUTH, routing_preview},
                          {"GET", "/api/files", DIRECT, AUTH, routing_files},
                          {"POST", "/api/upload", DIRECT, AUTH, routing_upload},
                          {"DELETE", "/api/files", PREFIX, AUTH, routing_delete},

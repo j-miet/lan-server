@@ -6,6 +6,6 @@ void send_response(int client_fd, int status_code, const char* status_text, cons
 void send_redirect(int client_fd, const char* location);
 void send_response_with_cookie(int client_fd, const char* token);
 void send_response_clear_cookie(int client_fd);
-void send_file_stream(int client_fd, const char* path, const char* content_type);
+void send_file_stream(int client_fd, const char* path, const char* content_type, int force_download);
 
 #endif

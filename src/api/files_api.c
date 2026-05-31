@@ -80,7 +80,6 @@ void handle_files_api(int client_fd) {
  */
 void handle_download(int client_fd, const char* path) {
     char decoded[256];
-
     url_decode(decoded, path + 10); // + 10 because string '/download/' has length 10
 
     if (!is_safe_path(decoded)) {
@@ -93,7 +92,28 @@ void handle_download(int client_fd, const char* path) {
 
     const char* content_type = get_content_type(full_path);
 
-    send_file_stream(client_fd, full_path, content_type);
+    send_file_stream(client_fd, full_path, content_type, 1);
+}
+
+/**
+ * Handle a file preview request from client
+ */
+void handle_preview(int client_fd, const char* path) {
+    // this code is pretty much the same as handle_download, just send_file_stream doesn't force the download
+    char decoded[256];
+    url_decode(decoded, path + 9); // '/preview/' has length 9
+
+    if (!is_safe_path(decoded)) {
+        send_text_response(client_fd, 403, "Forbidden", "Forbidden");
+        return;
+    }
+
+    char full_path[512];
+    snprintf(full_path, sizeof(full_path), "uploads/%s", decoded);
+
+    const char* content_type = get_content_type(full_path);
+
+    send_file_stream(client_fd, full_path, content_type, 0);
 }
 
 /**
@@ -135,7 +155,7 @@ void serve_static_file(int client_fd, const char* path) {
     snprintf(full_path, sizeof(full_path), "public%s", path);
     const char* content_type = get_content_type(full_path);
 
-    send_file_stream(client_fd, full_path, content_type);
+    send_file_stream(client_fd, full_path, content_type, 0);
 }
 
 /**

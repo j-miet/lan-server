@@ -101,6 +101,61 @@ function formatTimestamp(ts) {
   return new Date(ts * 1000).toLocaleString();
 }
 
+function togglePreview(button, filename, type) {
+  const container = button.parentElement.querySelector(
+    ".file-preview-container",
+  );
+
+  // toggle close
+  if (container.innerHTML !== "") {
+    container.innerHTML = "";
+    button.textContent = "Preview";
+    return;
+  }
+
+  button.textContent = "Close";
+
+  const url = `/preview/${filename}`;
+
+  // images
+  if (["png", "jpg", "jpeg", "gif", "webp"].includes(type)) {
+    container.innerHTML = `
+      <img
+        class="file-preview-image"
+        src="${url}"
+      />
+    `;
+  }
+
+  // videos
+  else if (["mp4", "webm"].includes(type)) {
+    container.innerHTML = `
+      <video
+        class="file-preview-video"
+        controls
+        preload="metadata"
+      >
+        <source src="${url}">
+      </video>
+    `;
+  }
+
+  // text/json
+  else if (["txt", "json", "log"].includes(type)) {
+    fetch(url)
+      .then((r) => r.text())
+      .then((text) => {
+        container.innerHTML = `
+          <pre class="file-preview-text"></pre>
+        `;
+
+        container.querySelector("pre").textContent = text;
+      });
+  } else {
+    container.innerHTML = `<div>No preview available</div>`;
+  }
+}
+
 function renderFiles() {
   fileList.innerHTML = "";
 
@@ -143,9 +198,9 @@ function renderFiles() {
 
     div.innerHTML = `
       <div class="file-info">
-        <a href="/download/${encodeURIComponent(file.name)}" title="${encodeURIComponent(file.name)}">
+        <div class="file-name">
           ${file.name}
-        </a>
+        </div>
 
         <div class="file-meta">
           ${file.type.toUpperCase()}
@@ -154,12 +209,36 @@ function renderFiles() {
           •
           ${formatTimestamp(file.modified)}
         </div>
+
+        <div class="file-preview-container"></div>
       </div>
 
-      <button onclick="deleteFile('${encodeURIComponent(file.name)}')">
+      <button class="preview-btn">
+        Preview
+      </button>
+
+      <a class="download-link"
+        href="/download/${encodeURIComponent(file.name)}">
+        <button>
+          Download
+        </button>
+      </a>
+
+      <button class="delete-btn">
         Delete
       </button>
-      `;
+    `;
+
+    const previewBtn = div.querySelector(".preview-btn");
+    const deleteBtn = div.querySelector(".delete-btn");
+
+    previewBtn.addEventListener("click", () => {
+      togglePreview(previewBtn, file.name, file.type);
+    });
+
+    deleteBtn.addEventListener("click", async () => {
+      await deleteFile(file.name);
+    });
 
     fileList.appendChild(div);
   }
@@ -169,7 +248,9 @@ function renderFiles() {
  * Delete an uploaded server file
  */
 async function deleteFile(file) {
-  const response = await fetch(`/api/files/${file}`, { method: "DELETE" });
+  const response = await fetch(`/api/files/${file}`, {
+    method: "DELETE",
+  });
 
   loadFiles();
 }
@@ -475,7 +556,6 @@ async function loadScripts() {
 }
 
 window.runScript = runScript;
-window.deleteFile = deleteFile;
 
 loadFiles();
 loadScripts();

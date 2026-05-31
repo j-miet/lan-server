@@ -82,7 +82,7 @@ void send_response_clear_cookie(int client_fd) {
 /**
  * Send a file to client via streaming
  */
-void send_file_stream(int client_fd, const char* path, const char* content_type) {
+void send_file_stream(int client_fd, const char* path, const char* content_type, int force_download) {
     FILE* file = fopen(path, "rb");
     if (!file)
         return;
@@ -95,16 +95,33 @@ void send_file_stream(int client_fd, const char* path, const char* content_type)
 
     long long file_size = st.st_size;
 
+    const char* filename = strrchr(path, '/');
+    if (filename)
+        filename++;
+    else
+        filename = path;
+
     // send headers
     char headers[1024];
 
-    snprintf(headers, sizeof(headers),
-             "HTTP/1.1 200 OK\r\n"
-             "Content-Type: %s\r\n"
-             "Content-Length: %lld\r\n"
-             "Connection: close\r\n"
-             "\r\n",
-             content_type, file_size);
+    if (force_download) {
+        snprintf(headers, sizeof(headers),
+                 "HTTP/1.1 200 OK\r\n"
+                 "Content-Type: %s\r\n"
+                 "Content-Length: %lld\r\n"
+                 "Content-Disposition: attachment; filename=\"%s\"\r\n"
+                 "Connection: close\r\n"
+                 "\r\n",
+                 content_type, file_size, filename);
+    } else {
+        snprintf(headers, sizeof(headers),
+                 "HTTP/1.1 200 OK\r\n"
+                 "Content-Type: %s\r\n"
+                 "Content-Length: %lld\r\n"
+                 "Connection: close\r\n"
+                 "\r\n",
+                 content_type, file_size);
+    }
 
     send(client_fd, headers, strlen(headers), 0);
 

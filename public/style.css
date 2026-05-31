@@ -12,6 +12,7 @@ body {
   border-radius: 10px;
 }
 
+/* script terminal */
 .terminal-wrapper {
   width: 100%;
 }
@@ -91,6 +92,7 @@ body {
   font-family: monospace;
 }
 
+/* script button and input args form */
 #script-container {
   gap: 12px;
   margin-top: 10px;
@@ -126,6 +128,7 @@ body {
   transform: scale(0.98);
 }
 
+/* file uploads */
 #drop-zone {
   border: 3px dashed white;
   padding: 40px;
@@ -153,6 +156,7 @@ body {
   word-break: break-all;
 }
 
+/* upload progress bar */
 #progress-container {
   width: 100px;
   height: 25px;
@@ -168,6 +172,7 @@ body {
   transition: width 0.1s;
 }
 
+/* file toolbar */
 .file-toolbar {
   display: flex;
   gap: 10px;
@@ -197,9 +202,11 @@ body {
   background: #7296b5;
 }
 
+/* file name + metadata */
 .file-entry {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 16px;
   padding: 14px 18px;
   margin-bottom: 10px;
@@ -219,9 +226,8 @@ body {
 }
 
 .file-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+  flex: 1;
+  min-width: 0; /* truncation instead of layout break */
 }
 
 .file-info a,
@@ -246,12 +252,12 @@ body {
   opacity: 0.85;
 }
 
+/* file button */
 .file-entry button {
   margin-left: auto;
   padding: 8px 12px;
   border: none;
   border-radius: 8px;
-  background: #b44;
   color: white;
   cursor: pointer;
   transition:
@@ -259,15 +265,57 @@ body {
     transform 0.1s ease;
 }
 
-.file-entry button:hover {
-  background: #d55;
-  transform: scale(1.03);
+.file-entry .preview-btn {
+  background-color: #4a90e2;
 }
 
-.file-entry button:active {
-  transform: scale(0.98);
+.file-entry .preview-btn:hover {
+  background: #2f5f99;
 }
 
+.file-entry .download-link button {
+  background-color: #3aa76d;
+}
+
+.file-entry .download-link button:hover {
+  background: #2f7a50;
+}
+
+.file-entry .delete-btn {
+  background-color: #d9534f;
+}
+
+.file-entry .delete-btn:hover {
+  background: #a94442;
+}
+
+/* file previews */
+.file-preview-container {
+  margin-top: 10px;
+}
+
+.file-preview-image {
+  max-width: 400px;
+  max-height: 300px;
+  border-radius: 6px;
+}
+
+.file-preview-video {
+  width: 400px;
+  max-height: 300px;
+}
+
+.file-preview-text {
+  background: #111;
+  color: #ddd;
+  padding: 10px;
+  border-radius: 5px;
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+/* file wrapper */
 #file-list {
   height: 500px;
   overflow-y: auto;
