@@ -109,17 +109,21 @@ Job* create_job() {
 
     for (int i = 0; i < MAX_JOBS; i++) {
         if (jobs[i].id == 0) {
-            jobs[i].id = next_job_id++;
             jobs[i].output_capacity = 8192;
             jobs[i].output_size = 0;
 
             jobs[i].output = malloc(jobs[i].output_capacity);
-            if (!jobs[i].output)
+            if (!jobs[i].output) {
+                pthread_mutex_unlock(&jobs_mutex);
                 return NULL;
-
-            jobs[i].output[0] = '\0';
+            }
 
             pthread_mutex_init(&jobs[i].lock, NULL);
+
+            jobs[i].output[0] = '\0';
+            jobs[i].id = next_job_id++;
+
+            pthread_mutex_unlock(&jobs_mutex);
 
             return &jobs[i];
         }
