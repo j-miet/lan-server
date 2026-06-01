@@ -26,6 +26,11 @@ static void* client_thread(void* arg) {
 void start_server(int port) {
     int server_fd = create_server_socket(port);
 
+    if (server_fd < 0) {
+        perror("socket");
+        return;
+    }
+
     while (1) {
         int client_fd = accept(server_fd, NULL, NULL);
 

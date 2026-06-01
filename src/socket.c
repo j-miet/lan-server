@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/socket.h>
 
 #include "socket.h"
@@ -15,7 +16,13 @@ int create_server_socket(int port) {
         return -1;
     }
 
+    // allows bind to re-use local addresses, avoiding 'accept: Bad file descriptor' error
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
     struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
