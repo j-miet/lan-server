@@ -42,12 +42,12 @@ downloading/previewing
         - description
         - script execution path
         - a struct for args
-    - each args requires
+    - each arg requires
         - name
-        - type (either "text" or "select")
+        - type (either `"text"` or `"select"`)
         - description
-        - required check: 1 if this field has to be filled, 0 if empty is fine
-        - if type is "select", list of  pre-defined choices; otherwise NULL for free input
+        - required check: `1` if this field has to be filled, `0` if optional
+        - if type is `"select"`, list of pre-defined choices; otherwise `NULL` for free user input
     - final struct is then used for building a json response. With this data, javascript can dynamically generate a simple web form for each script 
 - threaded client operations
     - this means file uploading, downloading and running scripts don't directly interfere
@@ -70,13 +70,14 @@ downloading/previewing
     - uploading supports multiple files (browse+select or drag & drop) and displays progress
         - each upload queue includes its own progress bar with a cancellation button
     - display all uploaded server files in a list-like structure which auto-updates on file changes. Files include metadata such as
+        - name
         - type
         - size
         - upload date (technically 'last modified' but files are always copied and override existing ones with same name)
     - each file has `Preview`, `Download` and `Delete` buttons
         - previews don't automatically work for all file formats, but do support the common ones. Both `src/http/mime.c` and `public/app.js -> TEXT_FORMATS` can be used for expanding this functionality
     - simple search and sorting (name/type/size/date + ascending/descending)
-- run scripts and see their output in a window. 
+- run scripts and see their output in a separate window. 
     - multiple scripts can be run simultaneously and their output will not interfere with one another
     - small extra feature: 6 pre-defined text colors which you can easily edit in index.html (button visuals) + style.css (the text itself)
 
@@ -94,7 +95,9 @@ Make sure to update TOKEN value: even though this is just a lan server tool, it 
 
 #### start the server
 
-You can simply run server like this. But you can also move lan-server file elsewhere, just make sure you have all required directory dependencies then run it as executable.
+You can simply run server like with `make server` (this executes ./bin/lan-server)
+
+You can also move lan-server file elsewhere, just make sure you have all required directory dependencies then run it as executable.
 
 For example if your root is called `my-server` then you need
 
@@ -103,10 +106,10 @@ my-server/
   lan-server (executable)
   config/ (server.conf defines port + auth token)
   uploads/ (file storage)
-  public/ (Web UI)
+  public/ (Web UI; optional, but most likely want this)
 ```
 
-Also it's important you run executable relative to root dir, otherwise server can't find config the file. For example: if your executable is still at "bin/lan-server", you need to use command `./bin/lan-server` from root; simply cd'ing into "bin" and running ./lan-server fails.
+Also it's important you run executable relative to root dir, otherwise server can't find config file. For example: if your executable is still at "bin/lan-server", you need to use command `./bin/lan-server` from root; simply cd'ing into "bin" and running ./lan-server fails.
 
 => to keep it simple: either use `make server` or have executable in root dir.
 
@@ -129,8 +132,10 @@ In general:
 
 ## Building with make
 
+Project uses a simple Makefile:
+
 - `make build` builds src into `bin/lan-server`
-- `make server` starts the server in `bin/lan-server`
+- `make server` starts the server with `./bin/lan-server`
 
 This makes modification of server source files very simple.
 
@@ -139,7 +144,7 @@ Make sure to `chmod +x lan-server` for file execution rights
 
 ## Adding a new script
 
-In this example I use my [PixelRay](https://github.com/j-miet/PixelRay) ray tracer program to add a server script which can generate gif animations from json and lua files. It reads the inputs from server's `uploads` directory and produces the output gif into same location.
+In this example I use my [PixelRay](https://github.com/j-miet/PixelRay) ray tracer to add a server script which can generate gif animations from json and lua files. It reads the inputs from server's `uploads` directory and produces the output gif into same location.
 
 ---
 
@@ -276,7 +281,7 @@ Things that could be added/improved:
     - also try to move most of the inline css from index.html and app.js into style.css
         for better control
 - move file searching to server-side
-- pagination
+- pagination (or some other measure to limit loaded file count if server eventually has hundreds/thousands of files)
 - mobile-friendly web UI
 - scripting API: add queueing and cancellation
 - some unit tests + an integration test or two
