@@ -29,9 +29,8 @@ const char* get_client_ip(int fd) {
 void url_decode(char* dest, const char* src) {
     while (*src) {
         // decode hexadecimals %XX e.g. empty space %20
-        if (*src == '%' && isxdigit(*(src + 1)) && isxdigit(*(src + 1))) {
-            int value;
-
+        if (*src == '%' && isxdigit((unsigned char)src[1]) && isxdigit((unsigned char)src[2])) {
+            unsigned int value;
             sscanf(src + 1, "%2x", &value);
 
             *dest++ = (char)value;
