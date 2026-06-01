@@ -396,9 +396,8 @@ async function uploadFile(file) {
 async function uploadFiles(files) {
   for (const file of files) {
     await uploadFile(file);
+    loadFiles(); // this could get expensive with lots of files, but it can stay for now
   }
-
-  loadFiles();
 }
 
 /**
