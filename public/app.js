@@ -276,7 +276,7 @@ function renderFiles() {
  * Delete an uploaded server file
  */
 async function deleteFile(file) {
-  const response = await fetch(`/api/files/${file}`, {
+  const response = await fetch(`/api/files/${encodeURIComponent(file)}`, {
     method: "DELETE",
   });
 
