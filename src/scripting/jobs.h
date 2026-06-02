@@ -29,7 +29,7 @@ typedef struct {
 
 Job* create_job();
 Job* find_job(int id);
-void start_job(Job* job, const char* command);
+void start_job(Job* job, char* argv[]);
 void cleanup_jobs();
 
 #endif

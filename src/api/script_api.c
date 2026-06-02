@@ -128,7 +128,6 @@ void handle_script_execute(int client_fd, HttpRequest* req) {
     }
 
     ScriptEntry* script = NULL;
-
     for (int i = 0; scripts[i].name != NULL; i++) {
         if (strcmp(script_name, scripts[i].name) == 0) {
             script = &scripts[i];
@@ -145,28 +144,32 @@ void handle_script_execute(int client_fd, HttpRequest* req) {
     job->status = JOB_RUNNING;
     job->output[0] = '\0';
 
-    char command[512] = {0};
-    snprintf(command, sizeof(command), "%s", script->command);
+    char* argv[32];
+    int argc = 0;
 
-    if (req->body && strlen(req->body) > 0) {
-        char arg[256];
+    argv[argc++] = (char*)script->command; // argv[0] = path to executable
 
-        for (int i = 0; script->fields[i].name != NULL; i++) {
-            ScriptField* field = &script->fields[i];
-            memset(arg, 0, sizeof(arg)); // flush previous arg data
+    // arguments
+    for (int i = 0; script->fields[i].name != NULL; i++) {
+        ScriptField* field = &script->fields[i];
 
-            json_get_string(req->body, field->name, arg, sizeof(arg));
+        char arg[256] = {0};
 
-            if (arg[0] != '\0') {
-                strncat(command, " ", sizeof(command) - strlen(command) - 1);
-                strncat(command, arg, sizeof(command) - strlen(command) - 1);
-            }
+        json_get_string(req->body, field->name, arg, sizeof(arg));
+
+        if (arg[0] != '\0') {
+            argv[argc++] = strdup(arg);
         }
-    } else {
-        snprintf(command, sizeof(command), "%s", script->command);
     }
 
-    start_job(job, command);
+    argv[argc] = NULL;
+
+    start_job(job, argv);
+
+    // free temporary strdup allocations after start_job has made its own duplicates
+    for (int i = 1; i < argc; i++) {
+        free(argv[i]);
+    }
 
     char json[128];
     snprintf(json, sizeof(json), "{\"job_id\":%d}", job->id);
