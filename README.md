@@ -20,8 +20,8 @@
 ## Table of contents
 
 - [<u>Features</u>](#features)
-- [<u>Running the server</u>](#serverconf)
-- [<u>Building with make</u>](#building-with-make)
+- [<u>Makefile</u>](#makefile)
+- [<u>Running the server</u>](#running-the-server)
 - [<u>Adding a new script</u>](#adding-a-new-script)
 - [<u>Improvements</u>](#improvements)
 - [<u>References</u>](#references)
@@ -85,7 +85,23 @@ Might be missing something here, but these should cover the most important ones:
         `src/http/mime.c` and `public/app.js -> TEXT_FORMATS` can be used for expanding this functionality
     - simple search and sorting (name/type/size/date + ascending/descending)
 
-        
+
+## Makefile
+
+Project uses a simple Makefile:
+
+- `make build` builds src into `bin/lan-server`
+    - `make` also works by itself
+- `make server` first builds then starts the server with `./bin/lan-server`
+- `make tests` builds tests into `bin/tests`
+- `make test` first builds then runs the test suite with `./bin/tests`
+- `make clean` deletes both lan-server and tests executables from bin
+
+For simplest setup: just use `make server` to run the server
+
+> Server has no remote stop command yet; use **Ctrl + C** in terminal to shut it down
+
+
 ## Running the server
 
 #### server.conf
@@ -100,7 +116,7 @@ safety layer.
 
 #### start the server
 
-You can simply run server like with `make server` (this executes ./bin/lan-server)
+You can simply run server with `make server` (this executes ./bin/lan-server)
 
 You can also move lan-server file elsewhere, just make sure you have all required directory dependencies then run 
 it as executable.
@@ -141,19 +157,6 @@ local IPv4 address e.g. `http://192.168.1.1:PORT_NUMBER/`
         - powershell -> `Get-NetIPAddress`
     - Linux:
         - bash -> `hostname -I`
-
-
-## Building with make
-
-Project uses a simple Makefile:
-
-- `make build` builds src into `bin/lan-server`
-- `make server` starts the server with `./bin/lan-server`
-- server has no stop command yet; use Ctrl + C in terminal to shut down
-
-This makes modification of server source files very simple.
-
-Make sure to `chmod +x lan-server` for file execution rights
 
 
 ## Adding a new script
