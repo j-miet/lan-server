@@ -8,13 +8,10 @@
 
 #include "response.h"
 
-typedef struct {
-    long long start;
-    long long end;
-    int valid;
-} HttpRange;
-
-static HttpRange parse_range(const char* range_header, long long file_size) {
+/**
+ * Parse range bytes from range headers
+ */
+HttpRange parse_range(const char* range_header, long long file_size) {
     HttpRange r = {0, file_size - 1, 0};
 
     if (!range_header)
@@ -39,17 +36,33 @@ static HttpRange parse_range(const char* range_header, long long file_size) {
     const char* start_str = buf;
     const char* end_str = dash + 1;
 
-    if (strlen(start_str) > 0)
-        r.start = atoll(start_str);
-    else
-        r.start = 0;
+    // handle suffix range "bytes=-END" which translates to last END bytes
+    if (strlen(start_str) == 0) {
+        if (strlen(end_str) == 0) // "bytes=-" is invalid
+            return r;
+
+        long long suffix = atoll(end_str);
+        if (suffix <= 0)
+            return r;
+
+        r.start = file_size - suffix;
+        if (r.start < 0)
+            r.start = 0;
+
+        r.end = file_size - 1;
+        r.valid = 1;
+
+        return r;
+    }
+
+    r.start = atoll(start_str);
 
     if (strlen(end_str) > 0)
         r.end = atoll(end_str);
     else
         r.end = file_size - 1;
 
-    // appy clamping
+    // apply clamping
     if (r.start < 0)
         r.start = 0;
     if (r.end >= file_size)
