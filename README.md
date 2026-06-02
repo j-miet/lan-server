@@ -11,10 +11,10 @@
 - Frontend browser UI runs on vanilla Html + Css + JS
     - needs some visual polishing, but functionality-wise it fetches and updates as expected
 
-    > While the server itself is for Linux only, Windows users can easily run it inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
-    >
-    > - If you use Windows 10, I would recommend downgrading to WSL version 1 in order avoid network connection loss issues when downloading anything. 
-    > - On Windows 11 both version 1 and 2 are fine.
+> While the server itself is for Linux only, Windows users can easily run it inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
+>
+> - If you use Windows 10, I would recommend downgrading to WSL version 1 in order avoid network connection loss issues when downloading anything. 
+> - On Windows 11 both version 1 and 2 are fine.
 
 
 ## Table of contents
@@ -35,43 +35,54 @@ Might be missing something here, but these should cover the most important ones:
 - uploading, downloading and deleting (POST, GET, DELETE)
     - file transfer operations support arbitrary file sizes and formats
 - scripting support
-    - scripts APIs are created in `script_api.c`
-    - each has: name, description, script execution path and a struct for args
-    - each arg requires
-        - name
-        - type (either `"text"` or `"select"`)
-        - description
-        - required check: `1` if this field has to be filled, `0` if optional
-        - if type is `"select"`, list of pre-defined choices; otherwise `NULL` for free user input
-    - final struct is then used for building a json response. With this data, javascript can dynamically generate a simple web form for each script 
+    - scripts have 3 different routes: execution, status polling and text output access
+    - importantly backend can build json responses from script structs for frontend. Frontend then dynamically generates its own input forms from this data for each script
+        - backend handles script struct parsing in `script_api.c`
+        - each script has a name, description, script execution path and a struct for args
+        - each arg array requires:
+            - name
+            - type (either `"text"` or `"select"`)
+            - description
+            - required check: `1` if this field is required, `0` if optional
+            - select options: if type is `"select"`, list of pre-defined choices; otherwise `NULL` for free user input
 - threaded client operations
     - this means file uploading, downloading and running scripts don't directly interfere
      with one another. 
         - sometimes script outputs might get buffered, but should mostly work as expected. Not entirely sure why this
-        happens, but seems to be related to server load when multiple expensive operations run concurrently e.g. a few large 
+        happens, but seems to be related to server load when multiple expensive operations run concurrently e.g. a 
+        few large 
         downloads mixed with a longer script or two
     - simple mutex+locking for preventing race conditions with uploads, deletes and job worker threads
 - cookie-based token authentication: this serves as a small but nonetheless useful security layer
 - `config/server.conf` file for updating port and auth token
     - **remember to update the TOKEN value for actual use and do not upload it to the server!**
-- routes are listed in `src/http/routing.c`. Here you can change which routes require auth permissions (change `AUTH` to `PUBLIC`)
+- routes are listed in `src/http/routing.c`. Here you can change which routes require auth permissions 
+(change `AUTH` to `PUBLIC`)
 
 #### Web UI
 - login/logout with auth token 
-    - cookies don't define Max-Age/Expires attribute which means they get deleted when current sessions ends. This can mean various lengths, even infinite lifetime; see [this MDN section](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies#removal_defining_the_lifetime_of_a_cookie) for more details
+    - cookies don't define Max-Age/Expires attribute which means they get deleted when current sessions ends. This can 
+    mean various lengths, even infinite lifetime; see 
+    [this MDN section](
+        https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies#removal_defining_the_lifetime_of_a_cookie
+        ) 
+    for more details
 - script API with an output window. Multiple scripts can be run simultaneously
     - clicking at script button opens a auto-generated web form where user can type the input args
-    - output text color has 6 pre-defined variants to select from. These can be easily edited in index.html (button visuals) + style.css (the text itself)
+    - output text color has 6 pre-defined variants to select from. These can be easily edited in index.html 
+    (button visuals) + style.css (the text itself)
 - file storage
     - uploading supports multiple files (browse+select or drag & drop) and displays progress
         - each upload queue includes its own progress bar with a cancel button
-    - display all uploaded server files in a list structure which auto-updates on file changes. Files include metadata such as
+    - display all uploaded server files in a list structure which auto-updates on file changes. Files include 
+    metadata such as
         - name
         - type
         - size
         - upload date (technically 'last modified' but files will always override existing ones with a matching name)
     - each file has `Preview`, `Download` and `Delete` buttons
-        - previews don't automatically work for all file formats, but do support the most common ones. Both `src/http/mime.c` and `public/app.js -> TEXT_FORMATS` can be used for expanding this functionality
+        - previews don't automatically work for all file formats, but do support the most common ones. Both 
+        `src/http/mime.c` and `public/app.js -> TEXT_FORMATS` can be used for expanding this functionality
     - simple search and sorting (name/type/size/date + ascending/descending)
 
         
@@ -84,13 +95,15 @@ To set port and login password token, edit `config/server.conf`:
     PORT=8080
     TOKEN=secret-token
 
-Make sure to update TOKEN value: even though this is just a lan server tool, it never hurts to have an additional safety layer.
+Make sure to update TOKEN value: even though this is just a lan server tool, it never hurts to have an additional 
+safety layer.
 
 #### start the server
 
 You can simply run server like with `make server` (this executes ./bin/lan-server)
 
-You can also move lan-server file elsewhere, just make sure you have all required directory dependencies then run it as executable.
+You can also move lan-server file elsewhere, just make sure you have all required directory dependencies then run 
+it as executable.
 
 For example if your root is called `my-server` then you need
 
@@ -102,7 +115,9 @@ my-server/
   public/ (Web UI; optional, but most likely want this)
 ```
 
-Also it's important you run executable relative to root dir, otherwise server can't find config file. For example: if your executable is still at "bin/lan-server", you need to use command `./bin/lan-server` from root; simply cd'ing into "bin" and running ./lan-server fails.
+Also it's important you run executable relative to root dir, otherwise server can't find config file. For example: 
+if your executable is still at "bin/lan-server", you need to use command `./bin/lan-server` from root; 
+simply cd'ing into "bin" and running ./lan-server fails.
 
 => to keep it simple: either use `make server` or have executable in root dir.
 
@@ -116,9 +131,11 @@ You can first test connecting via ip normally. If this doesn't work, you can alw
 In general:
 
 - if you run server on localhost (= host and users on same machine), use `http://localhost:PORT_NUMBER/`
-- otherwise make sure your host server machine and main PC are in same local network, then connect to host via local IPv4 address e.g. `http://192.168.1.1:PORT_NUMBER/`
+- otherwise make sure your host server machine and main PC are in same local network, then connect to host via 
+local IPv4 address e.g. `http://192.168.1.1:PORT_NUMBER/`
     
-    Here you replace the ipv4 and port your host address + the port you defined in server.conf. To find ip, use one of the following commands:
+    Here you replace the ipv4 and port your host address + the port you defined in server.conf. To find ip, 
+    use one of the following commands:
     - Windows: 
         - cmd -> `ipconfig`, find line `IPv4 Address ... : 192.168.x.x`
         - powershell -> `Get-NetIPAddress`
@@ -141,7 +158,9 @@ Make sure to `chmod +x lan-server` for file execution rights
 
 ## Adding a new script
 
-In this example I use my [PixelRay](https://github.com/j-miet/PixelRay) ray tracer project to add a server script which can generate gif animations from json and lua files. It reads the inputs from server's `uploads` directory and produces the output gif into same location.
+In this example I use my [PixelRay](https://github.com/j-miet/PixelRay) ray tracer project to add a server script 
+which can generate gif animations from json and lua files. It reads the inputs from server's `uploads` directory and 
+produces the output gif into same location.
 
 ---
 
@@ -158,24 +177,29 @@ ScriptEntry scripts[] = {
 };
 ```
 
-- ScriptEntry lists all available scripts. Each requires name, path, description and a ScriptField struct for passed args. Final entry must be a list of NULLs so that the build-in json parser knows where to stop parsing.
+- ScriptEntry lists all available scripts. Each requires name, path, description and a ScriptField struct for passed 
+args. Final entry must be a list of NULLs so that the build-in json parser knows where to stop parsing.
 - ScriptField lists each args as a list. List includes 
     - arg name
     - type ("text" for free input, "select" for a dropdown select with pre-defined values)
     - description
     - required check: 1 is input is required, 0 if optional
-    - "select" type options. If type is "text", then replace this array with `{NULL}`. Otherwise list all options and finish with a NULL value e.g. in script_test, two values are used, "hello!" and "bye!", which generates array like this: `{"hello!", "bye!", NULL}`
+    - "select" type options. If type is "text", then replace this array with `{NULL}`. Otherwise list all options and 
+    finish with a NULL value e.g. in script_test, two values are used, "hello!" and "bye!", which generates array like this: `{"hello!", "bye!", NULL}`
 
-Then ScriptEntry is build into a json string which gets fed to web ui page where app.js builds the scripting UI dynamically based on these values.
+Then ScriptEntry is build into a json string which gets fed to web ui page where app.js builds the scripting UI 
+dynamically based on these values.
 
-Now we'll add a new script called **pixelrayGif** into ScriptEntry: this script runs the PixelRay executable which requires inputs for
+Now we'll add a new script called **pixelrayGif** into ScriptEntry: this script runs the PixelRay executable which 
+requires inputs for
 - static scene creation file (json)
 - script file for animations (lua)
 - amount of animation frames (integer)
 
 > Script API can't perform further type validations, it only sees string values.  The script itself should perform safety checks if necessary (more on this later).
 
-In this case, each input field should accept a free input so all of them will use type "text". Each arg is also required in order to run the script so set the 4. value as `1` which corresponds to boolean true.
+In this case, each input field should accept a free input so all of them will use type "text". Each arg is also 
+required in order to run the script so set the 4. value as `1` which corresponds to boolean true.
 
 Thus ScriptField becomes like this:
 
@@ -266,7 +290,8 @@ rm -- "$LUA"
 After a script has been added: 
 - close and rebuild the server with `make build`
 - reopen the server
-- refresh web UI and you should see the button `pixelrayGif` under scripts. Clicking this opens the auto-generated input form similarly to `test` script where you can pass args and execute the script
+- refresh web UI and you should see the button `pixelrayGif` under scripts. Clicking this opens the auto-generated 
+input form similarly to `test` script where you can pass args and execute the script
 
 ## Improvements
 
