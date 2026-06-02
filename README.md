@@ -1,4 +1,4 @@
-# Small LAN server environment for Linux
+# A small LAN server tool for Linux
 
 <p align="center">
   <img src="docs/images/webUI.png" alt="Server webUI index.html "><br>
@@ -287,7 +287,8 @@ rm -- "$SCENE"
 rm -- "$LUA"
 ```
 
-After a script has been added: 
+After a script has been added:
+- create `executables/PixelRay` directory and place PixelRay Linux executable here i.e. full path is now `executables/PixelRay/PixelRay`
 - close and rebuild the server with `make build`
 - reopen the server
 - refresh web UI and you should see the button `pixelrayGif` under scripts. Clicking this opens the auto-generated 
