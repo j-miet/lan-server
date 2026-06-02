@@ -579,16 +579,6 @@ function renderScriptForm(script) {
       payload[key] = inputs[key].value;
     }
 
-    // required field validation
-    for (const field of script.fields) {
-      const value = inputs[field.name].value;
-
-      if (field.required && !value.trim()) {
-        alert(`${field.name} is required`);
-        return;
-      }
-    }
-
     // input field validation
     for (const field of script.fields) {
       const value = inputs[field.name].value;
