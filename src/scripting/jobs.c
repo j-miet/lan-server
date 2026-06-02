@@ -172,7 +172,7 @@ static void destroy_job(Job* job) {
 /**
  * Create a new job
  */
-Job* create_job() {
+Job* create_job(void) {
     pthread_mutex_lock(&jobs_mutex);
 
     for (int i = 0; i < MAX_JOBS; i++) {
@@ -245,7 +245,7 @@ void start_job(Job* job, char* argv[]) {
 /**
  * Properly dispose of job structs
  */
-void cleanup_jobs() {
+void cleanup_jobs(void) {
     time_t now = time(NULL);
 
     for (int i = 0; i < MAX_JOBS; i++) {

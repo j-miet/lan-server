@@ -2,7 +2,7 @@
 #include "config.h"
 #include "server.h"
 
-int main() {
+int main(void) {
     if (load_config("config/server.conf") < 0)
         return -1;
 
