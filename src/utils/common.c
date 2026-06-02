@@ -29,7 +29,8 @@ const char* get_client_ip(int fd) {
 void url_decode(char* dest, const char* src) {
     while (*src) {
         // decode hexadecimals %XX e.g. empty space %20
-        if (*src == '%' && isxdigit((unsigned char)src[1]) && isxdigit((unsigned char)src[2])) {
+        if (*src == '%' && src[1] != '\0' && src[2] != '\0' && isxdigit((unsigned char)src[1]) &&
+            isxdigit((unsigned char)src[2])) {
             unsigned int value;
             sscanf(src + 1, "%2x", &value);
 
@@ -48,23 +49,29 @@ void url_decode(char* dest, const char* src) {
 }
 
 /**
- * Get range from a header
+ * Get a specific header from raw header string
+ * This will not work for parsing header field values!
  * Return 0 for success, -1 for failure
  */
 int get_header(const char* raw, const char* key, char* out, int size) {
+    size_t key_len = strlen(key);
     const char* p = raw;
 
     while ((p = strstr(p, key)) != NULL) {
-
-        // ensure it's at line start or after \n
-        if (p != raw && *(p - 1) != '\n') {
-            p += strlen(key);
+        // must be start of line
+        if (p != raw && p[-1] != '\n') {
+            p += key_len;
             continue;
         }
 
-        p += strlen(key);
+        // must be exact key match followed by ':'
+        if (strncmp(p, key, key_len) != 0 || p[key_len] != ':') {
+            p += key_len;
+            continue;
+        }
 
-        // skip ": " or ":"
+        p += key_len;
+
         if (*p == ':')
             p++;
         if (*p == ' ')
@@ -76,6 +83,7 @@ int get_header(const char* raw, const char* key, char* out, int size) {
         }
 
         out[i] = '\0';
+
         return 0;
     }
 
