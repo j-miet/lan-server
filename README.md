@@ -60,8 +60,9 @@ Might be missing something here, but these should cover the most important ones:
 - login/logout with auth token 
     - cookies don't define Max-Age/Expires attribute which means they get deleted when current sessions ends. This can mean various lengths, even infinite lifetime; see [this MDN section](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies#removal_defining_the_lifetime_of_a_cookie) for more details
 - script API with an output window. Multiple scripts can be run simultaneously
+    - clicking at script button opens a auto-generated web form where user can type the input args
     - output text color has 6 pre-defined variants to select from. These can be easily edited in index.html (button visuals) + style.css (the text itself)
-- files:
+- file storage
     - uploading supports multiple files (browse+select or drag & drop) and displays progress
         - each upload queue includes its own progress bar with a cancel button
     - display all uploaded server files in a list structure which auto-updates on file changes. Files include metadata such as
@@ -277,7 +278,7 @@ Things that could be added/improved:
     - also try to move most of the inline css from index.html and app.js into style.css
         for better control
     - after finishing these, add an image or two to readme
-- move file searching to server-side
+- improved progress bars (time spend + finish estimate, file size)
 - pagination (or some other measure to limit loaded file count if server eventually has hundreds/thousands of files)
 - mobile-friendly web UI
 - scripting API: add queueing and cancellation
@@ -287,6 +288,7 @@ Things that could be added/improved:
 
 #### Secondary
 
+- move file searching to server-side (frontend sends search+sort parameters)
 - add sql database support, either a self-build minimal db engine or just sqLite, and then
     - file tags for custom grouping
     - server history logs for all uploads and job runs
