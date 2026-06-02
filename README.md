@@ -1,19 +1,20 @@
 # Small LAN server environment for Linux
 
-- backend server running on C, build on top of Linux network API, no third-party dependencies
-- frontend browser UI running on vanilla Html + Css + JS
+<p align="center">
+  <img src="docs/images/webUI.png" alt="Server webUI index.html "><br>
+  <em>Frontend UI, minus the top-right logout button (captured with 50% zoom to fit everything)</em>
+</p>
 
-> While the server itself is for Linux only, Windows users can easily run it inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
->
-> - If you use Windows 10, I would recommend downgrading to WSL version 1 in order avoid network connection loss issues when downloading anything. 
-> - On Windows 11 both version 1 and 2 are fine
+---
 
-If you face connection issues between your local machines, you might need to pick a VPN tool such as
-- ZeroTier
-- TailScale
-- WireGuard
+- Backend server runs on C, build on top of Linux network API, no third-party dependencies
+- Frontend browser UI runs on vanilla Html + Css + JS
+    - needs some visual polishing, but functionality-wise it fetches and updates as expected
 
-or similar
+    > While the server itself is for Linux only, Windows users can easily run it inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
+    >
+    > - If you use Windows 10, I would recommend downgrading to WSL version 1 in order avoid network connection loss issues when downloading anything. 
+    > - On Windows 11 both version 1 and 2 are fine.
 
 
 ## Table of contents
@@ -32,16 +33,10 @@ Might be missing something here, but these should cover the most important ones:
 
 #### Server
 - uploading, downloading and deleting (POST, GET, DELETE)
-- arbitrary file sizes and formats
-    - transfer operations are streamed in chunks: this allows seamless delivery on even large file sizes
-downloading/previewing
+    - file transfer operations support arbitrary file sizes and formats
 - scripting support
     - scripts APIs are created in `script_api.c`
-    - each has 
-        - name
-        - description
-        - script execution path
-        - a struct for args
+    - each has: name, description, script execution path and a struct for args
     - each arg requires
         - name
         - type (either `"text"` or `"select"`)
@@ -58,28 +53,25 @@ downloading/previewing
     - simple mutex+locking for preventing race conditions with uploads, deletes and job worker threads
 - cookie-based token authentication: this serves as a small but nonetheless useful security layer
 - `config/server.conf` file for updating port and auth token
-    - **remember to update the token for actual use and do not upload it to the server!**
+    - **remember to update the TOKEN value for actual use and do not upload it to the server!**
 - routes are listed in `src/http/routing.c`. Here you can change which routes require auth permissions (change `AUTH` to `PUBLIC`)
 
 #### Web UI
-- login/logout with auth token. Cookies don't define Max-Age/Expires attribute which means they get deleted when current sessions ends. This can mean various lengths, even infinite lifetime; see [this MDN section](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies#removal_defining_the_lifetime_of_a_cookie) for more details
-- fully asynchronous to take advantage of server-side threading
-- run scripts and see their output in a window. Multiple scripts can be run simultaneously
-    - small extra feature: change terminal text color between 6 pre-defined colors
+- login/logout with auth token 
+    - cookies don't define Max-Age/Expires attribute which means they get deleted when current sessions ends. This can mean various lengths, even infinite lifetime; see [this MDN section](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies#removal_defining_the_lifetime_of_a_cookie) for more details
+- script API with an output window. Multiple scripts can be run simultaneously
+    - output text color has 6 pre-defined variants to select from. These can be easily edited in index.html (button visuals) + style.css (the text itself)
 - files:
     - uploading supports multiple files (browse+select or drag & drop) and displays progress
-        - each upload queue includes its own progress bar with a cancellation button
-    - display all uploaded server files in a list-like structure which auto-updates on file changes. Files include metadata such as
+        - each upload queue includes its own progress bar with a cancel button
+    - display all uploaded server files in a list structure which auto-updates on file changes. Files include metadata such as
         - name
         - type
         - size
-        - upload date (technically 'last modified' but files are always copied and override existing ones with same name)
+        - upload date (technically 'last modified' but files will always override existing ones with a matching name)
     - each file has `Preview`, `Download` and `Delete` buttons
-        - previews don't automatically work for all file formats, but do support the common ones. Both `src/http/mime.c` and `public/app.js -> TEXT_FORMATS` can be used for expanding this functionality
+        - previews don't automatically work for all file formats, but do support the most common ones. Both `src/http/mime.c` and `public/app.js -> TEXT_FORMATS` can be used for expanding this functionality
     - simple search and sorting (name/type/size/date + ascending/descending)
-- run scripts and see their output in a separate window. 
-    - multiple scripts can be run simultaneously and their output will not interfere with one another
-    - small extra feature: 6 pre-defined text colors which you can easily edit in index.html (button visuals) + style.css (the text itself)
 
         
 ## Running the server
@@ -115,7 +107,10 @@ Also it's important you run executable relative to root dir, otherwise server ca
 
 #### connecting to server
 
-You can first test connecting via ip normally. If this doesn't work, you can always rely on VPNs listed at the start of this document.
+You can first test connecting via ip normally. If this doesn't work, you can always rely on VPNs such as
+- ZeroTier
+- TailScale
+- WireGuard, etc.
 
 In general:
 
@@ -136,6 +131,7 @@ Project uses a simple Makefile:
 
 - `make build` builds src into `bin/lan-server`
 - `make server` starts the server with `./bin/lan-server`
+- server has no stop command yet; use Ctrl + C in terminal to shut down
 
 This makes modification of server source files very simple.
 
@@ -144,7 +140,7 @@ Make sure to `chmod +x lan-server` for file execution rights
 
 ## Adding a new script
 
-In this example I use my [PixelRay](https://github.com/j-miet/PixelRay) ray tracer to add a server script which can generate gif animations from json and lua files. It reads the inputs from server's `uploads` directory and produces the output gif into same location.
+In this example I use my [PixelRay](https://github.com/j-miet/PixelRay) ray tracer project to add a server script which can generate gif animations from json and lua files. It reads the inputs from server's `uploads` directory and produces the output gif into same location.
 
 ---
 
@@ -176,9 +172,9 @@ Now we'll add a new script called **pixelrayGif** into ScriptEntry: this script 
 - script file for animations (lua)
 - amount of animation frames (integer)
 
-Script API can't perform further type validations, it only sees string values.  The script itself should perform safety checks if necessary (more on this later).
+> Script API can't perform further type validations, it only sees string values.  The script itself should perform safety checks if necessary (more on this later).
 
-In this case, each input field should take a free input so all will use type "text". Each is also required in order to run the script so set the 4. value as `1` which corresponds to boolean true.
+In this case, each input field should accept a free input so all of them will use type "text". Each arg is also required in order to run the script so set the 4. value as `1` which corresponds to boolean true.
 
 Thus ScriptField becomes like this:
 
@@ -199,7 +195,7 @@ ScriptEntry scripts[] = {
 };
 ```
 
-where `pixelrayGif.sh` looks like this:
+where the bash file `pixelrayGif.sh` looks like this:
 
 ```bash
 #!/bin/bash
@@ -280,22 +276,24 @@ Things that could be added/improved:
 - css: add login.html styling + a couple smaller improvements to index.html
     - also try to move most of the inline css from index.html and app.js into style.css
         for better control
+    - after finishing these, add an image or two to readme
 - move file searching to server-side
 - pagination (or some other measure to limit loaded file count if server eventually has hundreds/thousands of files)
 - mobile-friendly web UI
 - scripting API: add queueing and cancellation
+- add remote shutdown command + UI button (asks for confirmation e.g. input the auth token)
+    - could also add a server reset command
 - some unit tests + an integration test or two
 
 #### Secondary
 
 - add sql database support, either a self-build minimal db engine or just sqLite, and then
     - file tags for custom grouping
-    - server history logs: uploads and jobs
-    - a separate page for bookmarks with add, delete and tags
+    - server history logs for all uploads and job runs
+    - a separate page for bookmarks with add, delete and custom tags for grouping
 - add file IDs so urls don't include names anymore
-- mobile-friendly web UI
 - scripting API: replace polling with websockets
-- file thumbnails/icons (easy to add simple "string" icons, but what about a more versatile system)
+- file thumbnails/icons (easy to add simple "string" icons, but what about a more elaborate system)
 - upgrade from http to https
 
 
