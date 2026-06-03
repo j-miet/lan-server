@@ -1,7 +1,8 @@
+#include "../test.h"
+
 #include <stdio.h>
 
 #include "../src/http/response.h"
-#include "test.h"
 
 static void test_parse_range(void) {
     puts("parse_range");

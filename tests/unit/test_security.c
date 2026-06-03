@@ -1,7 +1,8 @@
+#include "../test.h"
+
 #include <stdio.h>
 
 #include "../src/security/sanitize.h"
-#include "test.h"
 
 static void test_is_safe_path(void) {
     puts("is_safe_path");

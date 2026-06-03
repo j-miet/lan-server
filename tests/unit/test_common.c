@@ -1,8 +1,9 @@
+#include "../test.h"
+
 #include <stdio.h>
 #include <string.h>
 
 #include "../src/utils/common.h"
-#include "test.h"
 
 static void test_url_decode(void) {
     puts("url_decode");
