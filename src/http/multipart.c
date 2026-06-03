@@ -46,9 +46,10 @@ void trim_multipart_footer(const char* path, const char* boundary) {
     fread(tail, 1, tail_size, fp);
 
     char marker[512];
-    snprintf(marker, sizeof(marker), "\r\n--%s", boundary);
+    int marker_len = snprintf(marker, sizeof(marker), "\r\n--%s", boundary);
 
-    char* boundary_pos = strstr(tail, marker);
+    // use memmem here instead of strstr, otherwise null byte in file data stops search and prevents footer trimming
+    char* boundary_pos = memmem(tail, tail_size, marker, marker_len);
     if (!boundary_pos) {
         fclose(fp);
         return;
