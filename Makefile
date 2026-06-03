@@ -1,7 +1,7 @@
 .PHONY: all build tests test serve clean
 
 CC=gcc
-CFLAGS=-Wall -Wextra -Werror -std=gnu23 -g -I./src
+CFLAGS=-Wall -Wextra -Werror -std=gnu2x -g -I./src
 
 SERVER_SRC=$(shell find src -name '*.c')
 TEST_SRC=$(filter-out src/main.c,$(SERVER_SRC))

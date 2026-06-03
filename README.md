@@ -7,7 +7,7 @@
 
 ---
 
-- Backend server runs on C, build on top of Linux network API, no third-party dependencies
+- Backend server runs on C23 (gcc compiles with `-std=gnu2x` flag), build on top of Linux network API, no third-party dependencies
 - Frontend browser UI runs on vanilla Html + Css + JS
     - needs some visual polishing, but functionality-wise it fetches and updates as expected
 
@@ -88,7 +88,11 @@ Might be missing something here, but these should cover the most important ones:
 
 ## Makefile
 
-Project uses a simple Makefile:
+Project uses a simple Makefile with gcc. 
+
+The *strdup* function is required for string duplication which was added in C23. Some slightly older gcc versions might not directly support gnu23 hence `-std=gnu2x` flag is used instead.
+
+Following make commands are thus available:
 
 - `make build` builds src into `bin/lan-server`
     - `make` also works by itself
