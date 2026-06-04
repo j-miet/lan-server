@@ -1,4 +1,4 @@
-#include "http_test_utils.h"
+#include "../helpers/http_helpers.h"
 
 #include <stdio.h>
 #include <stdlib.h>
