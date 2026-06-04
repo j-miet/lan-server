@@ -1,15 +1,19 @@
-# A small LAN server tool for Linux
+# Simple and compact LAN server tool for Linux
 
 <p align="center">
   <img src="docs/images/webUI.png" alt="Server webUI index.html "><br>
-  <em>Frontend UI, minus the top-right logout button (captured with 50% zoom to fit everything)</em>
+  <em>Frontend UI index page (captured with 50% browser zoom to fit everything)</em>
 </p>
 
 ---
 
-- Backend server runs on C23 (gcc compiles with `-std=gnu2x` flag), build on top of Linux network API, no third-party dependencies
+- Backend server runs on C23 (gcc compiles with `-std=gnu2x` flag) build on top of Linux network socket API, 
+*no third-party dependencies
 - Frontend browser UI runs on vanilla Html + Css + JS
-    - needs some visual polishing, but functionality-wise it fetches and updates as expected
+
+\* a sqLite database file will be added at some point (for logging, saving and adding tags to bookmark links etc.), 
+which does require sqlite tooling via sudo apt install. So currently no dependencies, but this is just a heads up 
+for the eventual change.
 
 > While the server itself is for Linux only, Windows users can easily run it inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
 >
@@ -32,27 +36,14 @@
 Might be missing something here, but these should cover the most important ones:
 
 #### Server
-- uploading, downloading and deleting (POST, GET, DELETE)
-    - file transfer operations support arbitrary file sizes and formats
+- uploading, downloading and deleting. File transfer operations support arbitrary file sizes and formats
 - scripting support
     - scripts have 3 different routes: execution, status polling and text output access
-    - importantly backend can build json responses from script structs for frontend. Frontend then dynamically generates its own input forms from this data for each script
-        - backend handles script struct parsing in `script_api.c`
-        - each script has a name, description, script execution path and a struct for args
-        - each arg array requires:
-            - name
-            - type (either `"text"` or `"select"`)
-            - description
-            - required check: `1` if this field is required, `0` if optional
-            - select options: if type is `"select"`, list of pre-defined choices; otherwise `NULL` for free user input
+    - importantly backend can build json responses from script structs for frontend. Frontend then dynamically 
+    generates its own input forms from this data for each script
 - threaded client operations
-    - this means file uploading, downloading and running scripts don't directly interfere
-     with one another. 
-        - sometimes script outputs might get buffered, but should mostly work as expected. Not entirely sure why this
-        happens, but seems to be related to server load when multiple expensive operations run concurrently e.g. a 
-        few large 
-        downloads mixed with a longer script or two
-    - simple mutex+locking for preventing race conditions with uploads, deletes and job worker threads
+    - file uploading, downloading and running scripts don't directly interfere with one another. 
+    - simple mutex+locking for preventing race conditions
 - cookie-based token authentication: this serves as a small but nonetheless useful security layer
 - `config/server.conf` file for updating port and auth token
     - **remember to update the TOKEN value for actual use and do not upload it to the server!**
@@ -72,14 +63,11 @@ Might be missing something here, but these should cover the most important ones:
     - output text color has 6 pre-defined variants to select from. These can be easily edited in index.html 
     (button visuals) + style.css (the text itself)
 - file storage
-    - uploading supports multiple files (browse+select or drag & drop) and displays progress
+    - uploading supports multiple files (browse+select or drag & drop) and displays progress for each upload queue 
+    individually
         - each upload queue includes its own progress bar with a cancel button
     - display all uploaded server files in a list structure which auto-updates on file changes. Files include 
-    metadata such as
-        - name
-        - type
-        - size
-        - upload date (technically 'last modified' but files will always override existing ones with a matching name)
+    metadata (name, type, size, upload date)
     - each file has `Preview`, `Download` and `Delete` buttons
         - previews don't automatically work for all file formats, but do support the most common ones. Both 
         `src/http/mime.c` and `public/app.js -> TEXT_FORMATS` can be used for expanding this functionality
@@ -90,7 +78,8 @@ Might be missing something here, but these should cover the most important ones:
 
 Project uses a simple Makefile with gcc. 
 
-The *strdup* function is required for string duplication which was added in C23. Some slightly older gcc versions might not directly support gnu23 hence `-std=gnu2x` flag is used instead.
+The *strdup* function is required for string duplication which was added in C23. Some slightly older gcc versions 
+might not directly support gnu23 hence `-std=gnu2x` flag is used instead.
 
 Following make commands are thus available:
 
@@ -108,7 +97,7 @@ For simplest setup: just use `make server` to run the server
 
 ## Running the server
 
-#### server.conf
+### server.conf
 
 To set port and login password token, edit `config/server.conf`:
 
@@ -118,9 +107,9 @@ To set port and login password token, edit `config/server.conf`:
 Make sure to update TOKEN value: even though this is just a lan server tool, it never hurts to have an additional 
 safety layer.
 
-#### start the server
+### start the server
 
-You can simply run server with `make server` (this executes ./bin/lan-server)
+You can simply run server with Makefile using `make server` (this executes ./bin/lan-server)
 
 You can also move lan-server file elsewhere, just make sure you have all required directory dependencies then run 
 it as executable.
@@ -132,16 +121,16 @@ my-server/
   lan-server (executable)
   config/ (server.conf defines port + auth token)
   uploads/ (file storage)
-  public/ (Web UI; optional, but most likely want this)
+  public/ (Web UI; optional, but you most likely want this)
 ```
 
 Also it's important you run executable relative to root dir, otherwise server can't find config file. For example: 
 if your executable is still at "bin/lan-server", you need to use command `./bin/lan-server` from root; 
-simply cd'ing into "bin" and running ./lan-server fails.
+simply changing dir into "bin" and running ./lan-server fails.
 
 => to keep it simple: either use `make server` or have executable in root dir.
 
-#### connecting to server
+### connecting to server
 
 You can first test connecting via ip normally. If this doesn't work, you can always rely on VPNs such as
 - ZeroTier
@@ -188,11 +177,12 @@ ScriptEntry scripts[] = {
 args. Final entry must be a list of NULLs so that the build-in json parser knows where to stop parsing.
 - ScriptField lists each args as a list. List includes 
     - arg name
-    - type ("text" for free input, "select" for a dropdown select with pre-defined values)
+    - type (`"text"` for free input, `"select"` for a dropdown select with pre-defined values)
     - description
-    - required check: 1 is input is required, 0 if optional
+    - required check: `1` is input is required, `0` if optional
     - "select" type options. If type is "text", then replace this array with `{NULL}`. Otherwise list all options and 
-    finish with a NULL value e.g. in script_test, two values are used, "hello!" and "bye!", which generates array like this: `{"hello!", "bye!", NULL}`
+    finish with a NULL value e.g. in script_test, two values are used, "hello!" and "bye!", which generates array 
+    like this: `{"hello!", "bye!", NULL}`
 
 Then ScriptEntry is build into a json string which gets fed to web ui page where app.js builds the scripting UI 
 dynamically based on these values.
@@ -205,7 +195,7 @@ requires inputs for
 
 > Script API can't perform further type validations, it only sees string values.  The script itself should perform safety checks if necessary (more on this later).
 
-In this case, each input field should accept a free input so all of them will use type "text". Each arg is also 
+In this case, each input field should accept a free input so all of them will use type `"text"`. Each arg is also 
 required in order to run the script so set the 4. value as `1` which corresponds to boolean true.
 
 Thus ScriptField becomes like this:
@@ -281,7 +271,7 @@ fi
 chmod +x PixelRay
 ./PixelRay -i $SCENE -s $LUA $FRAMES -g -u 0
 
-mv "outputGIF.gif" "../../uploads"
+mv -- "outputGIF.gif" "../../uploads"
 
 if [ ! -d "frames" ]; then
     echo "Couldn't find frames dir after script completion!"
@@ -295,40 +285,42 @@ rm -- "$LUA"
 ```
 
 After a script has been added:
-- create `executables/PixelRay` directory and place PixelRay Linux executable here i.e. full path is now `executables/PixelRay/PixelRay`
+- create `executables/PixelRay` directory and place PixelRay Linux executable here i.e. full path is 
+now `executables/PixelRay/PixelRay`
 - close and rebuild the server with `make build`
 - reopen the server
 - refresh web UI and you should see the button `pixelrayGif` under scripts. Clicking this opens the auto-generated 
 input form similarly to `test` script where you can pass args and execute the script
 
+
 ## Improvements
 
-Things that could be added/improved:
+Some features than could get implemented:
 
 #### Priority
 
-- css: add login.html styling + a couple smaller improvements to index.html
-    - also try to move most of the inline css from index.html and app.js into style.css
-        for better control
-    - after finishing these, add an image or two to readme
 - improved progress bars (time spend + finish estimate, file size)
 - pagination (or some other measure to limit loaded file count if server eventually has hundreds/thousands of files)
 - mobile-friendly web UI
 - scripting API: add queueing and cancellation
 - add remote shutdown command + UI button (asks for confirmation e.g. input the auth token)
-    - could also add a server reset command
-- some unit tests + an integration test or two
+    - could also add a server reset command + button
+- more tests
 
 #### Secondary
 
 - move file searching to server-side (frontend sends search+sort parameters)
 - add sql database support, either a self-build minimal db engine or just sqLite, and then
-    - file tags for custom grouping
-    - server history logs for all uploads and job runs
-    - a separate page for bookmarks with add, delete and custom tags for grouping
+    - custom file tags for grouping/categorizing
+    - a separate page for server history logs to display every single upload and job run
+    - and also another page for bookmarks with add+delete and custom tags for grouping
 - add file IDs so urls don't include names anymore
-- scripting API: replace polling with websockets
+- switch file view between list (current) and grid
+
+#### Maybe eventually
+
 - file thumbnails/icons (easy to add simple "string" icons, but what about a more elaborate system)
+- scripting API: replace polling with websockets
 - upgrade from http to https
 
 
@@ -336,8 +328,9 @@ Things that could be added/improved:
 
 #### C (network) programming
 - [Beej's Guide to Network Programming](https://beej.us/guide/bgnet/)
+    - also just Beej's C language guides in general
 - [The Open Group](https://pubs.opengroup.org/onlinepubs/7908799/)
-- [Linux man-pages](https://man7.org/linux/man-pages/)
+- [Linux man pages](https://man7.org/linux/man-pages/)
 - [cppreference](https://en.cppreference.com/c/header) (standard lib headers)
 
 #### Web
