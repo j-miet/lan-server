@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="docs/images/webUI.png" alt="Server webUI index.html "><br>
-  <em>Frontend UI index page (captured with 50% browser zoom to fit everything)</em>
+  <em>Frontend UI index page: captured with 50% browser zoom to fit entire panel with keeping the 'test' script's input form expanded</em>
 </p>
 
 ---
@@ -11,14 +11,14 @@
 *no third-party dependencies
 - Frontend browser UI runs on vanilla Html + Css + JS
 
-\* a sqLite database file will be added at some point (for logging, saving and adding tags to bookmark links etc.), 
+\* an sqLite database file will be added at some point (for logging, saving and adding tags to bookmark links etc.), 
 which does require sqlite tooling via sudo apt install. So currently no dependencies, but this is just a heads up 
 for the eventual change.
 
 > While the server itself is for Linux only, Windows users can easily run it inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
 >
-> - If you use Windows 10, I would recommend downgrading to WSL version 1 in order avoid network connection loss issues when downloading anything. 
-> - On Windows 11 both version 1 and 2 are fine.
+> - If you use Windows 10, I would recommend downgrading to WSL version 1 in order avoid network connection loss issues when downloading anything inside WSL
+> - On Windows 11 both version 1 and 2 are fine
 
 
 ## Table of contents
@@ -314,6 +314,11 @@ Some features than could get implemented:
     - custom file tags for grouping/categorizing
     - a separate page for server history logs to display every single upload and job run
     - and also another page for bookmarks with add+delete and custom tags for grouping
+
+    Alternatively you could rework the index page and for example
+    - move the current panel into left
+    - then add separate panels for logs and hyperlinks
+
 - add file IDs so urls don't include names anymore
 - switch file view between list (current) and grid
 
