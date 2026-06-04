@@ -20,6 +20,12 @@
   box-sizing: border-box;
 }
 
+html {
+  transform: scale(0.75);
+  transform-origin: top center;
+  font-size: 120%;
+}
+
 body {
   margin: 0;
   padding: 40px 20px;
@@ -197,7 +203,7 @@ body {
 }
 
 #terminal-container {
-  height: 300px;
+  height: 400px;
   overflow-y: auto;
   background: #111;
   color: #0f0;
@@ -493,6 +499,12 @@ body {
   background: #5a5a5a;
   border-color: #888;
   transform: translateY(-1px);
+}
+
+.file-name {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.4;
 }
 
 .file-info {
