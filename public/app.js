@@ -68,7 +68,6 @@ document.getElementById("file-search").addEventListener("input", (e) => {
   renderFiles();
 });
 
-document.getElementById("file-sort").value = "name"; // force name field as default
 document.getElementById("file-sort").addEventListener("change", (e) => {
   currentSort = e.target.value;
 
@@ -207,6 +206,7 @@ function renderFiles() {
 
       case "type":
         result = a.type.localeCompare(b.type);
+        break;
 
       case "size":
         result = a.size - b.size;
@@ -504,21 +504,22 @@ function renderScriptForm(script) {
   }
 
   container.innerHTML = "";
-  container.style =
-    "border: 1px solid black; box-sizing: border-box; padding: 5px; margin-top: 10px";
+  container.dataset.title = script.name;
+
+  const formWrapper = document.createElement("div");
+  formWrapper.className = "script-form";
 
   const title = document.createElement("h3");
+  title.className = "script-form-title";
   title.textContent = script.name;
-  title.style = "color: darkblue";
 
-  container.appendChild(title);
-  container.dataset.title = script.name; // save current title
+  formWrapper.appendChild(title);
 
-  const scriptDescription = document.createElement("h4");
-  scriptDescription.textContent = script.description;
-  scriptDescription.style = "padding-bottom: 10px; color: greenyellow";
+  const description = document.createElement("div");
+  description.className = "script-form-description";
+  description.textContent = script.description;
 
-  container.appendChild(scriptDescription);
+  formWrapper.appendChild(description);
 
   const form = document.createElement("div");
 
@@ -526,12 +527,11 @@ function renderScriptForm(script) {
 
   for (const field of script.fields) {
     const wrapper = document.createElement("div");
-    wrapper.style =
-      "display: grid; grid-template-columns: 150px 150px; align-items: center";
+    wrapper.className = "script-field";
 
     const label = document.createElement("label");
     label.textContent = field.name;
-    label.style = "padding-right: 30px; font-weight: bold";
+
     wrapper.appendChild(label);
 
     let input;
@@ -552,8 +552,6 @@ function renderScriptForm(script) {
       input.type = "text";
     }
 
-    input.style = "border-radius: 5px";
-
     inputs[field.name] = input;
 
     wrapper.appendChild(input);
@@ -561,7 +559,7 @@ function renderScriptForm(script) {
     if (field.description) {
       const desc = document.createElement("small");
       desc.textContent = field.description;
-      desc.style = "padding-bottom: 10px";
+
       wrapper.appendChild(desc);
     }
 
@@ -569,8 +567,9 @@ function renderScriptForm(script) {
   }
 
   const runBtn = document.createElement("button");
+
+  runBtn.className = "run-script-btn";
   runBtn.textContent = "Run Script";
-  runBtn.style = "margin-top: 15px";
 
   runBtn.onclick = () => {
     const payload = {};
@@ -579,7 +578,6 @@ function renderScriptForm(script) {
       payload[key] = inputs[key].value;
     }
 
-    // input field validation
     for (const field of script.fields) {
       const value = inputs[field.name].value;
 
@@ -594,7 +592,9 @@ function renderScriptForm(script) {
 
   form.appendChild(runBtn);
 
-  container.appendChild(form);
+  formWrapper.appendChild(form);
+
+  container.appendChild(formWrapper);
 }
 
 /**

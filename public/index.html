@@ -8,10 +8,13 @@
   </head>
   <body>
     <div class="container">
-      <h1 style="margin-bottom: 0px">LAN Server</h1>
+      <header class="page-header">
+        <div>
+          <h1>Server Control Panel</h1>
+        </div>
 
-      <div style="position: fixed; top: 16px; right: 24px">
         <button
+          class="logout-btn"
           onclick="
             fetch('/api/logout', { method: 'POST' }).then(() =>
               window.location.replace('/login.html'),
@@ -20,52 +23,71 @@
         >
           Logout
         </button>
-      </div>
+      </header>
 
-      <div class="terminal-wrapper">
-        <div class="terminal-controls">
-          <button class="terminal-color-btn c1" data-color="#0f0"></button>
-          <button class="terminal-color-btn c2" data-color="orange"></button>
-          <button class="terminal-color-btn c3" data-color="#1e90ff"></button>
-          <button class="terminal-color-btn c4" data-color="#ff5f56"></button>
-          <button class="terminal-color-btn c5" data-color="darkgray"></button>
-          <button class="terminal-color-btn c6" data-color="white"></button>
+      <section class="panel">
+        <div class="section-header">
+          <h2>Terminal</h2>
         </div>
 
-        <div id="terminal-container">
-          -- Script window --
-          <p></p>
-          <div id="script-output"></div>
+        <div class="terminal-wrapper">
+          <div class="terminal-controls">
+            <button class="terminal-color-btn c1" data-color="#0f0"></button>
+            <button class="terminal-color-btn c2" data-color="orange"></button>
+            <button class="terminal-color-btn c3" data-color="#1e90ff"></button>
+            <button class="terminal-color-btn c4" data-color="#ff5f56"></button>
+            <button
+              class="terminal-color-btn c5"
+              data-color="darkgray"
+            ></button>
+            <button class="terminal-color-btn c6" data-color="white"></button>
+          </div>
+
+          <div id="terminal-container">
+            -- Script window --
+            <p></p>
+            <div id="script-output"></div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <h2>Scripts</h2>
-      <div id="script-container"></div>
-      <div id="script-form-container"></div>
-      <hr style="height: 3px; background-color: #333" />
+      <section class="panel">
+        <div class="section-header">
+          <h2>Scripts</h2>
+        </div>
 
-      <h2>Files</h2>
-      <div id="drop-zone">Drag files here for uploading</div>
-      <input type="file" id="file-input" multiple hidden />
+        <div id="script-container"></div>
+        <div id="script-form-container"></div>
+      </section>
 
-      <div id="upload-status">
-        <div id="upload-queue"></div>
-      </div>
+      <section class="panel">
+        <div class="section-header">
+          <h2>Files</h2>
+        </div>
 
-      <div class="file-toolbar">
-        <input type="text" id="file-search" placeholder="Search files..." />
+        <div id="drop-zone">Drag files here or click to upload</div>
 
-        <select id="file-sort">
-          <option value="name" selected>Name</option>
-          <option value="type">Type</option>
-          <option value="size">Size</option>
-          <option value="modified">Date</option>
-        </select>
+        <input type="file" id="file-input" multiple hidden />
 
-        <button id="file-sort-order">↑</button>
-      </div>
+        <div id="upload-status">
+          <div id="upload-queue"></div>
+        </div>
 
-      <div id="file-list">Loading...</div>
+        <div class="file-toolbar">
+          <input type="text" id="file-search" placeholder="Search files..." />
+
+          <select id="file-sort">
+            <option value="name" selected>Name</option>
+            <option value="type">Type</option>
+            <option value="size">Size</option>
+            <option value="modified">Date</option>
+          </select>
+
+          <button id="file-sort-order">↑</button>
+        </div>
+
+        <div id="file-list">Loading...</div>
+      </section>
     </div>
 
     <script type="module" src="/app.js"></script>
