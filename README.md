@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="docs/images/webUI.png" alt="Server webUI index.html "><br>
-  <em>Frontend UI index page: captured with 50% browser zoom to fit entire panel with keeping the 'test' script's input form expanded</em>
+  <em>Frontend UI index page (this image is a combination of 3 smaller segments to preserve text quality)</em>
 </p>
 
 ---
