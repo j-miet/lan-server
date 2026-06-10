@@ -20,11 +20,15 @@ static char* run_download(const char* req, int* len) {
     send(sp.client_fd, req, strlen(req), 0);
     shutdown(sp.client_fd, SHUT_WR);
 
-    HttpRequest parsed;
-    assert(parse_http_request(req, &parsed) == 0);
+    char buffer[16384];
+    int rlen = recv(sp.server_fd, buffer, sizeof(buffer) - 1, 0);
+    assert(rlen > 0);
+    buffer[rlen] = '\0';
 
-    handle_download(sp.server_fd, parsed.path);
+    HttpRequest hreq;
+    assert(parse_http_request(buffer, rlen, &hreq) == 0);
 
+    handle_download(sp.server_fd, hreq.path);
     shutdown(sp.server_fd, SHUT_WR);
 
     char* resp = drain_response(sp.client_fd, len);
@@ -49,7 +53,6 @@ void test_upload_and_download(void) {
                          "Host: localhost\r\n"
                          "\r\n";
     int resp_len;
-
     char* dl_resp = run_download(dl_req, &resp_len);
 
     // assertions
@@ -67,4 +70,36 @@ void test_upload_and_download(void) {
     }
 
     free(dl_resp);
+}
+
+void test_upload_and_download_large(void) {
+    puts("large file upload and download");
+
+    int size = 65536; // 4x the recv buffer, forces streaming loop
+
+    char* content = malloc(size);
+    for (int i = 0; i < size; i++)
+        content[i] = (char)(i % 256); // this will also test binary files
+
+    assert(do_upload("large.bin", content, size) == 0);
+
+    const char* dl_req = "GET /download/large.bin HTTP/1.1\r\n"
+                         "Host: localhost\r\n"
+                         "\r\n";
+    int resp_len;
+    char* dl_resp = run_download(dl_req, &resp_len);
+
+    CHECK(parse_status(dl_resp) == 200, "large download returns HTTP 200");
+
+    const char* body = response_body(dl_resp);
+    CHECK(body != NULL, "large download has body");
+
+    if (body) {
+        int body_len = resp_len - (int)(body - dl_resp);
+        CHECK(body_len == size, "large downloaded size matches");
+        CHECK(memcmp(body, content, size) == 0, "large downloaded content matches");
+    }
+
+    free(dl_resp);
+    free(content);
 }

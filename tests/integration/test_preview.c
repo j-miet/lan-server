@@ -44,7 +44,15 @@ static char* run_preview(const char* filename, const char* range, int* out_len) 
     send(sp.client_fd, req, strlen(req), 0);
     shutdown(sp.client_fd, SHUT_WR);
 
-    handle_preview(sp.server_fd, path, req);
+    char buffer[16384];
+    int rlen = recv(sp.server_fd, buffer, sizeof(buffer) - 1, 0);
+    assert(rlen > 0);
+    buffer[rlen] = '\0';
+
+    HttpRequest hreq;
+    assert(parse_http_request(buffer, rlen, &hreq) == 0);
+
+    handle_preview(sp.server_fd, &hreq);
     shutdown(sp.server_fd, SHUT_WR);
 
     char* resp = drain_response(sp.client_fd, out_len);
@@ -69,6 +77,7 @@ void test_preview_full_file(void) {
 
     const char* body = response_body(resp);
     CHECK(body != NULL, "response has body");
+
     if (body) {
         int body_len = len - (body - resp);
 
@@ -90,6 +99,7 @@ void test_preview_range(void) {
 
     const char* body = response_body(resp);
     CHECK(body != NULL, "range response has body");
+
     if (body) {
         int body_len = len - (body - resp);
 

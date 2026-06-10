@@ -69,13 +69,21 @@ int do_upload(const char* filename, const char* content, int length) {
     send(sp.client_fd, raw, raw_len, 0);
     shutdown(sp.client_fd, SHUT_WR);
 
-    HttpRequest req;
-    if (parse_http_request(raw, &req) != 0) {
+    char buffer[16384];
+    int rlen = recv(sp.server_fd, buffer, sizeof(buffer) - 1, 0);
+    if (rlen <= 0) {
+        free(raw);
+        return -1;
+    }
+    buffer[rlen] = '\0';
+
+    HttpRequest hreq;
+    if (parse_http_request(buffer, rlen, &hreq) != 0) {
         free(raw);
         return -1;
     }
 
-    handle_stream_upload(sp.server_fd, &req, raw, raw_len);
+    handle_stream_upload(sp.server_fd, &hreq);
     shutdown(sp.server_fd, SHUT_WR);
 
     char* resp = drain_response(sp.client_fd, NULL);

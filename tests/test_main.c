@@ -12,6 +12,7 @@ void test_security(void);
 
 // integration
 void test_upload_and_download(void);
+void test_upload_and_download_large(void);
 
 void test_preview_full_file(void);
 void test_preview_range(void);
@@ -37,6 +38,7 @@ int main(void) {
     test_setup();
 
     test_upload_and_download();
+    test_upload_and_download_large();
 
     test_teardown();
     puts("");
