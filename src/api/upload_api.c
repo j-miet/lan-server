@@ -9,34 +9,64 @@
 // tracks how many uploads this session. Used for producing unique temp files
 int upload_counter = 0;
 
+static const char* extract_first_file_data(const char* body, const char* boundary) {
+    if (!body || !boundary)
+        return NULL;
+
+    char delim[512];
+    snprintf(delim, sizeof(delim), "--%s", boundary); // construct boundary string
+
+    const char* p = strstr(body, delim); // find first boundary
+    if (!p)
+        return NULL;
+
+    p = strstr(p, "\r\n"); // move past boundary line
+    if (!p)
+        return NULL;
+    p += 2;
+
+    // skip multipart headers (Content-Disposition, etc.)
+    const char* header_end = strstr(p, "\r\n\r\n");
+    if (!header_end)
+        return NULL;
+
+    return header_end + 4; // return pointer to start of raw file data
+}
+
 /**
  * Uploads a file to server via streaming
  */
-void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, int header_size) {
-    const char* body_start = strstr(headers, "\r\n\r\n");
+void handle_stream_upload(int client_fd, HttpRequest* req) {
+    const char* body_start = req->body;
     if (!body_start)
         return;
 
-    body_start += 4;
+    long long body_start_offset = req->body - req->raw;
 
-    // how many upload bytes already in memory: this includes multipart headers + initial file bytes
-    int already_read = header_size - (body_start - headers);
+    // how many upload bytes already in memory: includes request headers + initial bytes (e.g. some multipart bytes)
+    long long already_read = req->raw_len - body_start_offset;
 
     char boundary[256];
-    if (get_boundary(headers, boundary, sizeof(boundary)) < 0) {
+    if (get_boundary(req->raw, boundary, sizeof(boundary)) < 0) {
         send_text_response(client_fd, 400, "Bad Request", "Missing boundary");
         return;
     }
 
-    const char* file_data_start = strstr(body_start, "\r\n\r\n"); // find multipart header end
+    char end_marker[512];
+    snprintf(end_marker, sizeof(end_marker), "\r\n--%s--", boundary);
+
+    // find multipart header end and move pointer to start of raw data
+    const char* file_data_start = extract_first_file_data(req->body, boundary);
     if (!file_data_start) {
         send_text_response(client_fd, 400, "Bad Request", "Invalid multipart");
         return;
     }
 
-    file_data_start += 4; // move over multipart header end to access raw file bytes
+    // find filename header field
+    const char* part_header = body_start;
 
-    const char* filename_start = strstr(body_start, "filename=\"");
+    part_header = strstr(part_header, "Content-Disposition");
+    const char* filename_start = strstr(part_header, "filename=\"");
     if (!filename_start)
         return;
 
@@ -44,7 +74,6 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
 
     // extract filename
     const char* filename_end = strchr(filename_start, '"');
-
     if (!filename_end)
         return;
 
@@ -68,8 +97,31 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
         return;
     };
 
-    long long initial_file_bytes = header_size - (file_data_start - headers); // actual file bytes in memory
-    fwrite(file_data_start, 1, initial_file_bytes, fp);                       // write initial bytes
+    long long file_start_offset = file_data_start - req->raw;
+    long long initial_file_bytes = req->raw_len - file_start_offset; // amount of actual file bytes in memory
+
+    // a special case where buffer cuts of header end marker is also handled by carrying marker_len-1 amount of bytes
+    // over to next loop iteration.
+    // why marker_len-1: because marker_len would mean the entire end marker was already consumed
+    char carry[512];
+    int carry_len = 0;
+    int marker_len = strlen(end_marker);
+
+    // write initial bytes into file. This carries
+    if (initial_file_bytes > 0) {
+        char* boundary_pos = memmem(file_data_start, initial_file_bytes, end_marker, strlen(end_marker));
+
+        if (boundary_pos) {
+            initial_file_bytes = boundary_pos - file_data_start;
+        } else {
+            initial_file_bytes -= marker_len - 1;
+            carry_len = marker_len - 1;
+            memcpy(carry, file_data_start + initial_file_bytes, carry_len);
+        }
+
+        if (initial_file_bytes > 0)
+            fwrite(file_data_start, 1, initial_file_bytes, fp);
+    }
 
     // then compute remaining bytes and use a recv loop to write into file
     long long remaining = req->content_length - already_read;
@@ -77,30 +129,53 @@ void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, 
 
     while (remaining > 0) {
         int to_read = remaining < (long long)sizeof(buffer) ? (int)remaining : (int)sizeof(buffer);
-        int received = recv(client_fd, buffer, to_read, 0);
 
+        int received = recv(client_fd, buffer, to_read, 0);
         if (received <= 0) {
             fclose(fp);
-            remove(temp_path); // temp file also removed on failure
+            remove(temp_path);
             return;
         }
 
-        fwrite(buffer, 1, received, fp);
+        // prepend carry bytes from previous iteration
+        char search_buf[sizeof(buffer) + sizeof(carry)];
+
+        // write carry-over bytes and then append received to the end
+        memcpy(search_buf, carry, carry_len);
+        memcpy(search_buf + carry_len, buffer, received);
+
+        int search_len = carry_len + received;
+
+        // detect final boundary inside stream
+        char* boundary_pos = memmem(search_buf, search_len, end_marker, marker_len);
+
+        if (boundary_pos) {
+            long valid_bytes = boundary_pos - search_buf - carry_len;
+            if (valid_bytes > 0)
+                fwrite(buffer, 1, valid_bytes, fp);
+
+            break;
+        }
+
+        // write previous carry bytes + newly received data, then repeat carry over on last (marker_len-1) bytes
+        if (carry_len > 0)
+            fwrite(carry, 1, carry_len, fp);
+
+        int safe_bytes = received - (marker_len - 1);
+        if (safe_bytes > 0)
+            fwrite(buffer, 1, safe_bytes, fp);
+
+        carry_len = received < (marker_len - 1) ? received : (marker_len - 1);
+        memcpy(carry, buffer + received - carry_len, carry_len);
 
         remaining -= received;
     }
 
     fclose(fp);
 
-    // remove multipart boundary/footer from TEMP file
-    trim_multipart_footer(temp_path, boundary);
-
-    // atomically replace final file
     if (rename(temp_path, full_path) != 0) {
         remove(temp_path);
-
         send_text_response(client_fd, 500, "Internal Server Error", "Failed to finalize upload");
-
         return;
     }
 

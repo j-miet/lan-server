@@ -1,6 +1,7 @@
 #include <dirent.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -35,9 +36,11 @@ void handle_files_api(int client_fd) {
     }
 
     JsonBuilder jb;
-    // TODO: make json buffer resize dynamically; if server has tons of files this will get filled eventually
-    char json[65536]; // only for json_init, don't touch this manually after
-    json_init(&jb, json, sizeof(json));
+    if (!json_init(&jb, 4096)) {
+        closedir(dir);
+        send_text_response(client_fd, 500, "Internal Server Error", "Out of memory");
+        return;
+    }
 
     json_append(&jb, "[");
 
@@ -45,7 +48,7 @@ void handle_files_api(int client_fd) {
     int first = 1;
 
     while ((dir_entry = readdir(dir)) != NULL) {
-        if (strstr(dir_entry->d_name, ".uploading")) // hide files that are currently getting uploaded
+        if (strstr(dir_entry->d_name, ".uploading")) // hide files that are currently being uploaded
             continue;
 
         if (strcmp(dir_entry->d_name, ".") == 0 || strcmp(dir_entry->d_name, "..") == 0)
@@ -79,7 +82,9 @@ void handle_files_api(int client_fd) {
 
     closedir(dir);
 
-    send_response(client_fd, 200, "OK", "application/json", json);
+    send_response(client_fd, 200, "OK", "application/json", jb.buffer);
+
+    free(jb.buffer);
 }
 
 /**
@@ -87,7 +92,7 @@ void handle_files_api(int client_fd) {
  */
 void handle_download(int client_fd, const char* path) {
     char decoded[256];
-    url_decode(decoded, path + 10); // + 10 because string '/download/' has length 10
+    url_decode(decoded, path + 10); // + 10 because string "/download/" has length 10
 
     if (!is_safe_path(decoded)) {
         send_text_response(client_fd, 403, "Forbidden", "Forbidden");
@@ -105,9 +110,9 @@ void handle_download(int client_fd, const char* path) {
 /**
  * Handle a file preview request from client
  */
-void handle_preview(int client_fd, const char* path, const char* headers) {
+void handle_preview(int client_fd, HttpRequest* req) {
     char decoded[256];
-    url_decode(decoded, path + 9); // '/preview/' has length 9
+    url_decode(decoded, req->path + 9); // string "/preview/" has length 9
 
     if (!is_safe_path(decoded)) {
         send_text_response(client_fd, 403, "Forbidden", "Forbidden");
@@ -121,7 +126,7 @@ void handle_preview(int client_fd, const char* path, const char* headers) {
 
     char range[128];
     range[0] = '\0';
-    get_header(headers, "Range", range, sizeof(range));
+    get_header(req->raw, "Range", range, sizeof(range));
 
     send_file_stream(client_fd, full_path, content_type, range[0] ? range : NULL, 0);
 }
@@ -130,7 +135,7 @@ void handle_preview(int client_fd, const char* path, const char* headers) {
  * Handle a file delete request from client
  */
 void handle_delete_file(int client_fd, const char* path) {
-    const char* filename = path + 11;
+    const char* filename = path + 11; // string "/api/files/" has length 11
 
     char decoded[256];
     url_decode(decoded, filename);

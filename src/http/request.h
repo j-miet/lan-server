@@ -6,13 +6,15 @@ typedef struct {
     char path[256];
     char version[16];
 
+    const char* raw;
     const char* body;
-    long long content_length;
+    int raw_len;
 
+    long long content_length;
 } HttpRequest;
 
 int read_http_headers(int client_fd, char* buffer, int max_size);
-int parse_http_request(const char* raw, HttpRequest* req);
+int parse_http_request(const char* raw, int raw_len, HttpRequest* req);
 long long get_content_length(const char* raw);
 
 #endif

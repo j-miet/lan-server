@@ -3,6 +3,6 @@
 #ifndef UPLOAD_API_H
 #define UPLOAD_API_H
 
-void handle_stream_upload(int client_fd, HttpRequest* req, const char* headers, int header_size);
+void handle_stream_upload(int client_fd, HttpRequest* req);
 
 #endif

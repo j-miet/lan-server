@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "../api/files_api.h"
@@ -81,7 +80,7 @@ static void routing_download(RequestContext* ctx) {
 }
 
 static void routing_preview(RequestContext* ctx) {
-    handle_preview(ctx->client_fd, ctx->req->path, ctx->raw_headers);
+    handle_preview(ctx->client_fd, ctx->req);
 }
 
 static void routing_files(RequestContext* ctx) {
@@ -89,7 +88,7 @@ static void routing_files(RequestContext* ctx) {
 }
 
 static void routing_upload(RequestContext* ctx) {
-    handle_stream_upload(ctx->client_fd, ctx->req, ctx->raw_headers, ctx->header_size);
+    handle_stream_upload(ctx->client_fd, ctx->req);
 }
 
 static void routing_delete(RequestContext* ctx) {

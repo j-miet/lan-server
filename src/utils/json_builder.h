@@ -9,7 +9,7 @@ typedef struct {
     size_t used;
 } JsonBuilder;
 
-void json_init(JsonBuilder* jb, char* buffer, size_t size);
-void json_append(JsonBuilder* jb, const char* fmt, ...);
+int json_init(JsonBuilder* jb, size_t initial_size);
+int json_append(JsonBuilder* jb, const char* fmt, ...);
 
 #endif

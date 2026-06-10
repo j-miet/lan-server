@@ -9,7 +9,7 @@ typedef struct {
     HttpRequest* req;
 
     const char* raw_headers;
-    int header_size;
+    int raw_len;
 
     int authenticated;
 } RequestContext;

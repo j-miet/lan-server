@@ -52,8 +52,10 @@ ScriptEntry scripts[] = {
  */
 void handle_scripts_api(int client_fd) {
     JsonBuilder jb;
-    char json[16384];
-    json_init(&jb, json, sizeof(json));
+    if (!json_init(&jb, 4096)) {
+        send_text_response(client_fd, 500, "Internal Server Error", "Out of memory");
+        return;
+    }
 
     json_append(&jb, "[");
 
@@ -104,7 +106,9 @@ void handle_scripts_api(int client_fd) {
 
     json_append(&jb, "]");
 
-    send_response(client_fd, 200, "OK", "application/json", json);
+    send_response(client_fd, 200, "OK", "application/json", jb.buffer);
+
+    free(jb.buffer);
 }
 
 /**
@@ -158,7 +162,7 @@ void handle_script_execute(int client_fd, HttpRequest* req) {
         json_get_string(req->body, field->name, arg, sizeof(arg));
 
         if (arg[0] != '\0') {
-            argv[argc++] = strdup(arg);
+            argv[argc++] = strdup(arg); // create copies to heap; otherwise arg pointers are wiped after this loop
         }
     }
 
@@ -181,7 +185,7 @@ void handle_script_execute(int client_fd, HttpRequest* req) {
  * Request status of an existing job
  */
 void handle_job_status(int client_fd, const char* path) {
-    int id = atoi(path + strlen("/api/jobs/status/"));
+    int id = strtol(path + strlen("/api/jobs/status/"), NULL, 10);
 
     Job* job = find_job(id);
     if (!job) {
@@ -241,10 +245,8 @@ void handle_job_output(int client_fd, const char* path) {
     char* escaped = malloc(chunk_size * 2 + 1);
     if (!escaped) {
         pthread_mutex_unlock(&job->lock);
-
         send_response(client_fd, 500, "Internal Server Error", "application/json",
                       "{\"error\":\"Memory allocation failed\"}");
-
         return;
     }
 
@@ -256,10 +258,8 @@ void handle_job_output(int client_fd, const char* path) {
     char* json = malloc(json_size);
     if (!json) {
         free(escaped);
-
         send_response(client_fd, 500, "Internal Server Error", "application/json",
                       "{\"error\":\"Memory allocation failed\"}");
-
         return;
     }
 
