@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "../config.h"
@@ -32,7 +30,7 @@ int authenticate_request(RequestContext* ctx) {
     char token[256];
     int i = 0;
 
-    // cookies also include semicolons to separate HttpOnly and Path
+    // cookies also include other fields such as HttpOnly and Path, which are separated with semicolons
     while (t[i] && t[i] != ';' && t[i] != '\r' && t[i] != '\n' && i < (int)sizeof(token) - 1) {
         token[i] = t[i];
         i++;

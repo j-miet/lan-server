@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <time.h>
 
 #ifndef JOBS_H
@@ -27,9 +28,9 @@ typedef struct {
     time_t completed_at;
 } Job;
 
-Job* create_job();
+Job* create_job(void);
 Job* find_job(int id);
 void start_job(Job* job, char* argv[]);
-void cleanup_jobs();
+void cleanup_jobs(void);
 
 #endif

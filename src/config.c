@@ -26,7 +26,7 @@ int load_config(const char* path) {
         trim_newline(line);
 
         if (strncmp(line, "PORT=", 5) == 0) {
-            g_config.port = atoi(line + 5);
+            g_config.port = strtol(line + 5, NULL, 10);
         } else if (strncmp(line, "TOKEN=", 6) == 0) {
             strncpy(g_config.token, line + 6, sizeof(g_config.token) - 1);
 

@@ -10,7 +10,6 @@
  */
 int create_server_socket(int port) {
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-
     if (server_fd < 0) {
         perror("socket");
         return -1;

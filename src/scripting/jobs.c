@@ -99,16 +99,13 @@ static void* job_worker(void* arg) {
             job->output_capacity *= 2;
 
             char* new_buf = realloc(job->output, job->output_capacity);
-
             if (!new_buf) {
                 pthread_mutex_unlock(&job->lock);
 
                 fclose(pipe_stream);
-
-                job->status = JOB_FAILED;
-
                 free(args);
 
+                job->status = JOB_FAILED;
                 job->completed_at = time(NULL);
 
                 return NULL;
@@ -148,7 +145,6 @@ static void* job_worker(void* arg) {
     }
 
     free(args);
-
     job->completed_at = time(NULL);
 
     return NULL;
@@ -186,7 +182,12 @@ Job* create_job(void) {
                 return NULL;
             }
 
-            pthread_mutex_init(&jobs[i].lock, NULL);
+            int ret = pthread_mutex_init(&jobs[i].lock, NULL);
+            if (ret != 0) {
+                pthread_mutex_unlock(&jobs_mutex);
+                free(jobs[i].output);
+                return NULL;
+            }
 
             jobs[i].output[0] = '\0';
             jobs[i].id = next_job_id++;
@@ -243,7 +244,7 @@ void start_job(Job* job, char* argv[]) {
 }
 
 /**
- * Properly dispose of job structs
+ * Properly dispose of finished jobs
  */
 void cleanup_jobs(void) {
     time_t now = time(NULL);

@@ -10,11 +10,9 @@
 
 static void* client_thread(void* arg) {
     int client_fd = *(int*)arg;
-
     free(arg); // free the passed fd pointer
 
     handle_client(client_fd);
-
     close(client_fd);
 
     return NULL;
@@ -25,7 +23,6 @@ static void* client_thread(void* arg) {
  */
 void start_server(int port) {
     int server_fd = create_server_socket(port);
-
     if (server_fd < 0) {
         perror("socket");
         return;
@@ -33,7 +30,6 @@ void start_server(int port) {
 
     while (1) {
         int client_fd = accept(server_fd, NULL, NULL);
-
         if (client_fd < 0) {
             perror("accept");
             continue;
@@ -44,7 +40,6 @@ void start_server(int port) {
         *fd_ptr = client_fd;
 
         pthread_t thread;
-
         pthread_create(&thread, NULL, client_thread, fd_ptr);
         pthread_detach(thread);
     }

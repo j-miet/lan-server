@@ -1,4 +1,5 @@
-#include <signal.h>
+#define _FILE_OFFSET_BITS 64
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,21 +28,21 @@ HttpRange parse_range(const char* range_header, long long file_size) {
     strncpy(buf, p, sizeof(buf) - 1);
     buf[sizeof(buf) - 1] = '\0';
 
-    char* dash = strchr(buf, '-');
+    char* dash = strrchr(buf, '-');
     if (!dash)
         return r;
 
-    *dash = '\0';
+    *dash = '\0'; // replace '-' with null terminator in order to split range to start and end
 
-    const char* start_str = buf;
-    const char* end_str = dash + 1;
+    const char* start_str = buf;    // read until '\0'
+    const char* end_str = dash + 1; // continue after '\0' until end
 
     // handle suffix range "bytes=-END" which translates to last END bytes
     if (strlen(start_str) == 0) {
         if (strlen(end_str) == 0) // "bytes=-" is invalid
             return r;
 
-        long long suffix = atoll(end_str);
+        long long suffix = strtoll(end_str, NULL, 10);
         if (suffix <= 0)
             return r;
 
@@ -55,10 +56,10 @@ HttpRange parse_range(const char* range_header, long long file_size) {
         return r;
     }
 
-    r.start = atoll(start_str);
+    r.start = strtoll(start_str, NULL, 10);
 
     if (strlen(end_str) > 0)
-        r.end = atoll(end_str);
+        r.end = strtoll(end_str, NULL, 10);
     else
         r.end = file_size - 1;
 
@@ -75,20 +76,13 @@ HttpRange parse_range(const char* range_header, long long file_size) {
 }
 
 /**
- * Send a text response
- */
-void send_text_response(int client_fd, int status_code, const char* status_text, const char* body) {
-    send_response(client_fd, status_code, status_text, "text/plain", body);
-}
-
-/**
  * Send a general http response
  */
 void send_response(int client_fd, int status_code, const char* status_text, const char* content_type,
                    const char* body) {
     char response[16384];
-
     int body_length = strlen(body);
+
     int response_length = snprintf(response, sizeof(response),
                                    "HTTP/1.1 %d %s\r\n"
                                    "Content-Type: %s\r\n"
@@ -101,10 +95,18 @@ void send_response(int client_fd, int status_code, const char* status_text, cons
 }
 
 /**
+ * Send a text response
+ */
+void send_text_response(int client_fd, int status_code, const char* status_text, const char* body) {
+    send_response(client_fd, status_code, status_text, "text/plain", body);
+}
+
+/**
  * Send a redirecting response (302)
  */
 void send_redirect(int client_fd, const char* location) {
     char response[512];
+
     int response_length = snprintf(response, sizeof(response),
                                    "HTTP/1.1 302 Found\r\n"
                                    "Location: %s\r\n"
@@ -116,7 +118,7 @@ void send_redirect(int client_fd, const char* location) {
 }
 
 /**
- * Send response with cookie data
+ * Send a json response with cookie data
  */
 void send_response_with_cookie(int client_fd, const char* token) {
     char response[1024];
@@ -134,7 +136,7 @@ void send_response_with_cookie(int client_fd, const char* token) {
 }
 
 /**
- * Send response with clearer cookie data
+ * Send response with cleared (empty) cookie data
  */
 void send_response_clear_cookie(int client_fd) {
     char response[512];
@@ -163,14 +165,13 @@ void send_file_stream(int client_fd, const char* path, const char* content_type,
     }
 
     long long file_size = st.st_size;
-
     HttpRange range = parse_range(range_header, file_size);
 
     long long start = range.valid ? range.start : 0;
     long long end = range.valid ? range.end : file_size - 1;
-    long long chunk_size = end - start + 1;
+    long long chunk_size = end - start + 1; // range includes end points i.e. [start, end]
 
-    // move file pointer
+    // move file pointer to start of range
     fseeko(file, start, SEEK_SET);
 
     // send headers
@@ -204,9 +205,9 @@ void send_file_stream(int client_fd, const char* path, const char* content_type,
     // then send body in small chunks via streaming, but only the requested range
     char buffer[8192];
     long long remaining = chunk_size;
+    size_t to_read = sizeof(buffer);
 
     while (remaining > 0) {
-        size_t to_read = sizeof(buffer);
         if ((long long)to_read > remaining)
             to_read = remaining;
 
