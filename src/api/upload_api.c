@@ -150,6 +150,9 @@ void handle_stream_upload(int client_fd, HttpRequest* req) {
         char* boundary_pos = memmem(search_buf, search_len, end_marker, marker_len);
 
         if (boundary_pos) {
+            if (carry_len > 0)
+                fwrite(carry, 1, carry_len, fp);
+
             long valid_bytes = boundary_pos - search_buf - carry_len;
             if (valid_bytes > 0)
                 fwrite(buffer, 1, valid_bytes, fp);
