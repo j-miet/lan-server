@@ -1,22 +1,28 @@
 "use strict";
 
+const terminalTitle = document.getElementById("terminal-title");
+terminalTitle.innerHTML = "-- Session started at " + getTimestamp() + " --\n";
+
+document.getElementById("file-sort").value = "name"; // force name field as default for sorting
+
 const dropZone = document.getElementById("drop-zone");
 const toggle = document.getElementById("file-icons-toggle");
 const fileInput = document.getElementById("file-input");
 const fileList = document.getElementById("file-list");
 
-// add any file formats here you wish to display in previews as plain text
+// any file formats listed here are displayed as plain text when previewing
 const TEXT_TYPES = [
   "txt",
   "json",
   "log",
   "md",
-  // languages
   "c",
   "h",
   "cpp",
   "hpp",
   "py",
+  "html",
+  "css",
   "js",
   "ts",
   "lua",
@@ -95,10 +101,7 @@ window.addEventListener("load", () => {
 });
 
 function getTimestamp() {
-  const now = new Date();
-  const date = now.toISOString().slice(0, 10);
-  const time = now.toLocaleTimeString();
-  return `${date} ${time}`;
+  return new Date().toLocaleString();
 }
 
 function formatFileSize(bytes) {
@@ -167,8 +170,8 @@ function togglePreview(button, filename, type) {
     `;
   }
 
-  // text/json
-  else if (["txt", "json", "log"].includes(type)) {
+  // text
+  else if (TEXT_TYPES.includes(type)) {
     fetch(url)
       .then((r) => r.text())
       .then((text) => {
@@ -246,10 +249,10 @@ function renderFiles() {
       </button>
 
       <a class="download-link"
-        href="/download/${encodeURIComponent(file.name)}">
-        <button>
+        href="/download/${encodeURIComponent(file.name)}"
+        download
+      >
           Download
-        </button>
       </a>
 
       <button class="delete-btn">
@@ -284,7 +287,7 @@ async function deleteFile(file) {
 }
 
 /**
- * Get all uploaded server files and create WebUI entries with metadata + download links for each
+ * Get all uploaded server files and create UI entry with metadata and buttons for each
  */
 async function loadFiles() {
   const response = await fetch("/api/files");
@@ -307,12 +310,11 @@ async function loadFiles() {
  */
 async function uploadFile(file) {
   return new Promise((resolve, reject) => {
+    // setup a new multipart request
     const formData = new FormData();
-
     formData.append("file", file);
 
     const xhr = new XMLHttpRequest();
-
     xhr.open("POST", "/api/upload");
 
     // create upload ui item
@@ -342,9 +344,7 @@ async function uploadFile(file) {
 
     progressBg.appendChild(progressFill);
 
-    item.appendChild(nameElem);
-    item.appendChild(progressBg);
-    item.appendChild(actions);
+    item.append(nameElem, progressBg, actions);
 
     queue.appendChild(item);
 
@@ -364,7 +364,11 @@ async function uploadFile(file) {
         item.remove();
       }, 1000);
 
-      resolve();
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`HTTP ${xhr.status}`));
+      }
     });
 
     xhr.addEventListener("error", () => {
@@ -419,13 +423,11 @@ async function runScript(name, payload = null) {
   const bodyElem = document.createElement("pre");
   bodyElem.className = "job-body";
 
-  jobElem.appendChild(headerElem);
-  jobElem.appendChild(bodyElem);
+  jobElem.append(headerElem, bodyElem);
 
   outputElem.appendChild(jobElem);
 
   const startedAt = getTimestamp();
-
   headerElem.textContent = `[${startedAt}] $ ${name}\n` + `[ STARTING ]`;
 
   terminal.scrollTop = terminal.scrollHeight;
@@ -489,12 +491,12 @@ async function runScript(name, payload = null) {
 }
 
 /**
- * Create script args interface
+ * Create an form-styled interface for a script
  */
 function renderScriptForm(script) {
   const container = document.getElementById("script-form-container");
 
-  // compare with current title: if same, flush contents + stored dataset. Otherwise flush just html
+  // compare with current title: if same, flush contents + stored dataset; otherwise flush just html.
   // with this, clicking at same script button closes the form and clicking another one just overrides its contents
   if (container.dataset.title === script.name) {
     container.innerHTML = "";
@@ -522,7 +524,6 @@ function renderScriptForm(script) {
   formWrapper.appendChild(description);
 
   const form = document.createElement("div");
-
   const inputs = {};
 
   for (const field of script.fields) {
@@ -598,13 +599,13 @@ function renderScriptForm(script) {
 }
 
 /**
- * Load all server-side scripts and creates buttons which open a form for input args for each
+ * Get builder data of all server-side scripts and create buttons to access an interface for each
  */
 async function loadScripts() {
   const res = await fetch("/api/scripts");
   const scripts = await res.json();
-  const container = document.getElementById("script-container");
 
+  const container = document.getElementById("script-container");
   container.innerHTML = "";
 
   for (const script of scripts) {
@@ -618,8 +619,6 @@ async function loadScripts() {
     container.appendChild(btn);
   }
 }
-
-window.runScript = runScript;
 
 loadFiles();
 loadScripts();
