@@ -1,4 +1,4 @@
-.PHONY: all build tests test serve clean
+.PHONY: all ci build server test clean
 
 CC ?= gcc
 CPPFLAGS += -I./src -D_FILE_OFFSET_BITS=64
@@ -14,16 +14,20 @@ TEST_OUT := bin/tests
 
 all: build
 
-tests:
-	mkdir -p bin
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(TEST_SRC) $(TESTS) -o $(TEST_OUT)
+ci: build test
 
-test: tests
-	./$(TEST_OUT)
+build: $(OUT)
 
-build:
+$(OUT): $(SERVER_SRC)
 	mkdir -p bin
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(SERVER_SRC) -o $(OUT)
+
+test: $(TEST_OUT)
+	./$(TEST_OUT)
+
+$(TEST_OUT):
+	mkdir -p bin
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(TEST_SRC) $(TESTS) -o $(TEST_OUT)
 
 server: build
 	./$(OUT)

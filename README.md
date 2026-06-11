@@ -77,12 +77,12 @@ might not directly support gnu23 hence `-std=gnu2x` flag is used instead.
 
 Following make commands are thus available:
 
-- `make build` => builds src into `bin/lan-server`
-    - `make` also works by itself (default to building)
-- `make server` => first builds then starts the server with `./bin/lan-server`
-- `make tests` => builds tests into `bin/tests`
-- `make test` => first builds then runs the test suite with `./bin/tests`
-- `make clean` => deletes both lan-server and tests files from bin
+- `make build` (or just `make`) => builds src into `bin/lan-server`
+    - if binary doesn't exists or has different source => build
+    - if already exists with same source => do nothing
+- `make server`  => checks build conditions first then starts the server with `./bin/lan-server`
+- `make test` => builds tests into `bin/tests` then runs them with `./bin/tests`
+- `make clean` => deletes both lan-server and tests binaries from `bin`
 
 For simplest setup: just use `make server` to run the server
 
@@ -124,7 +124,7 @@ Also it's important you run executable relative to root dir, otherwise server ca
 if your executable is still at "bin/lan-server", you need to use command `./bin/lan-server` from root; 
 simply changing dir into "bin" and running ./lan-server fails.
 
-=> to keep it simple: either use `make server` (recommended) or have executable in root dir.
+=> to keep it simple: use `make server`
 
 ### connecting to server
 
