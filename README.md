@@ -1,7 +1,7 @@
 # Simple and compact LAN server tool for Linux
 
-<p style="text-align: center">
-  <img src="docs/images/webUI.png" alt="Server webUI index.html "><br>
+<p align="center">
+  <img src="docs/images/webUI.png" alt="Server webUI index.html" />
   <em>Browser UI for index page</em>
 </p>
 
