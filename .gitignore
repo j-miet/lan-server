@@ -1,5 +1,10 @@
+# executables (lan-server + tests)
 bin
-lan-server
 
+# vs code
 .vscode
 
+# user-specific server files
+external
+scripts
+uploads

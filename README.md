@@ -1,19 +1,14 @@
 # Simple and compact LAN server tool for Linux
 
-<p align="center">
+<p style="text-align: center">
   <img src="docs/images/webUI.png" alt="Server webUI index.html "><br>
-  <em>Frontend UI index page (this image is a combination of 3 smaller segments to preserve text quality)</em>
+  <em>Browser UI for index page</em>
 </p>
 
 ---
 
-- Backend server runs on C23 (gcc compiles with `-std=gnu2x` flag) build on top of Linux network socket API, 
-*no third-party dependencies
-- Frontend browser UI runs on vanilla Html + Css + JS
-
-\* an sqLite database file will be added at some point (for logging, saving and adding tags to bookmark links etc.), 
-which does require sqlite tooling via sudo apt install. So currently no dependencies, but this is just a heads up 
-for the eventual change.
+- Backend server runs on C23 (gcc compiles with `-std=gnu2x` flag) build on top of Linux network socket API
+- Frontend browser user interface uses vanilla Html + Css + JS files which it requests from the server
 
 > While the server itself is for Linux only, Windows users can easily run it inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
 >
@@ -25,9 +20,8 @@ for the eventual change.
 
 - [<u>Features</u>](#features)
 - [<u>Makefile</u>](#makefile)
-- [<u>Running the server</u>](#running-the-server)
-- [<u>Adding a new script</u>](#adding-a-new-script)
-- [<u>Improvements</u>](#improvements)
+- [<u>Server setup</u>](#server-setup)
+- [<u>Adding new scripts</u>](#adding-new-scripts)
 - [<u>References</u>](#references)
 
 
@@ -70,7 +64,7 @@ Might be missing something here, but these should cover the most important ones:
     metadata (name, type, size, upload date)
     - each file has `Preview`, `Download` and `Delete` buttons
         - previews don't automatically work for all file formats, but do support the most common ones. Both 
-        `src/http/mime.c` and `public/app.js -> TEXT_FORMATS` can be used for expanding this functionality
+        `src/http/mime.c` and `public/app.js -> TEXT_FORMATS + togglePreview` can be used for expanding this functionality
     - simple search and sorting (name/type/size/date + ascending/descending)
 
 
@@ -83,23 +77,23 @@ might not directly support gnu23 hence `-std=gnu2x` flag is used instead.
 
 Following make commands are thus available:
 
-- `make build` builds src into `bin/lan-server`
-    - `make` also works by itself
-- `make server` first builds then starts the server with `./bin/lan-server`
-- `make tests` builds tests into `bin/tests`
-- `make test` first builds then runs the test suite with `./bin/tests`
-- `make clean` deletes both lan-server and tests executables from bin
+- `make build` => builds src into `bin/lan-server`
+    - `make` also works by itself (default to building)
+- `make server` => first builds then starts the server with `./bin/lan-server`
+- `make tests` => builds tests into `bin/tests`
+- `make test` => first builds then runs the test suite with `./bin/tests`
+- `make clean` => deletes both lan-server and tests files from bin
 
 For simplest setup: just use `make server` to run the server
 
 > Server has no remote stop command yet; use **Ctrl + C** in terminal to shut it down
 
 
-## Running the server
+## Server setup
 
 ### server.conf
 
-To set port and login password token, edit `config/server.conf`:
+To set port and login auth token, edit `config/server.conf`:
 
     PORT=8080
     TOKEN=secret-token
@@ -107,9 +101,11 @@ To set port and login password token, edit `config/server.conf`:
 Make sure to update TOKEN value: even though this is just a lan server tool, it never hurts to have an additional 
 safety layer.
 
-### start the server
+Default PORT is fine. If you have other servers using this, feel free to replace it.
 
-You can simply run server with Makefile using `make server` (this executes ./bin/lan-server)
+### running the server
+
+You can simply run server with Makefile using `make server` (this builds file into bin directory then executes ./bin/lan-server)
 
 You can also move lan-server file elsewhere, just make sure you have all required directory dependencies then run 
 it as executable.
@@ -128,7 +124,7 @@ Also it's important you run executable relative to root dir, otherwise server ca
 if your executable is still at "bin/lan-server", you need to use command `./bin/lan-server` from root; 
 simply changing dir into "bin" and running ./lan-server fails.
 
-=> to keep it simple: either use `make server` or have executable in root dir.
+=> to keep it simple: either use `make server` (recommended) or have executable in root dir.
 
 ### connecting to server
 
@@ -152,7 +148,7 @@ local IPv4 address e.g. `http://192.168.1.1:PORT_NUMBER/`
         - bash -> `hostname -I`
 
 
-## Adding a new script
+## Adding new scripts
 
 In this example I use my [PixelRay](https://github.com/j-miet/PixelRay) ray tracer project to add a server script 
 which can generate gif animations from json and lua files. It reads the inputs from server's `uploads` directory and 
@@ -184,16 +180,16 @@ args. Final entry must be a list of NULLs so that the build-in json parser knows
     finish with a NULL value e.g. in script_test, two values are used, "hello!" and "bye!", which generates array 
     like this: `{"hello!", "bye!", NULL}`
 
-Then ScriptEntry is build into a json string which gets fed to web ui page where app.js builds the scripting UI 
+Now ScriptEntry is build into a json string which gets fed to browser, where in app.js, javascript builds the scripting UI 
 dynamically based on these values.
 
 Now we'll add a new script called **pixelrayGif** into ScriptEntry: this script runs the PixelRay executable which 
 requires inputs for
 - static scene creation file (json)
 - script file for animations (lua)
-- amount of animation frames (integer)
+- amount of animation frames (integer value)
 
-> Script API can't perform further type validations, it only sees string values.  The script itself should perform safety checks if necessary (more on this later).
+> Script API can't perform further type validations, it only sees string values.  The script itself should perform safety checks if necessary; more on this later.
 
 In this case, each input field should accept a free input so all of them will use type `"text"`. Each arg is also 
 required in order to run the script so set the 4. value as `1` which corresponds to boolean true.
@@ -285,58 +281,25 @@ rm -- "$LUA"
 ```
 
 After a script has been added:
-- create `executables/PixelRay` directory and place PixelRay Linux executable here i.e. full path is 
-now `executables/PixelRay/PixelRay`
-- close and rebuild the server with `make build`
-- reopen the server
+- create `external/PixelRay` directory and place PixelRay Linux executable here i.e. full path is 
+now `external/PixelRay/PixelRay`
+    - remember to `chmod +x PixelRay`, otherwise you will get an error when attempting to call the script
+- close and then `make server` to rebuild + run the server
 - refresh web UI and you should see the button `pixelrayGif` under scripts. Clicking this opens the auto-generated 
 input form similarly to `test` script where you can pass args and execute the script
 
 
-## Improvements
-
-Some features than could get implemented:
-
-#### Priority
-
-- improved progress bars (time spend + finish estimate, file size)
-- pagination (or some other measure to limit loaded file count if server eventually has hundreds/thousands of files)
-- mobile-friendly web UI
-- scripting API: add queueing and cancellation
-- add remote shutdown command + UI button (asks for confirmation e.g. input the auth token)
-    - could also add a server reset command + button
-- more tests
-
-#### Secondary
-
-- move file searching to server-side (frontend sends search+sort parameters)
-- add sql database support, either a self-build minimal db engine or just sqLite, and then
-    - custom file tags for grouping/categorizing
-    - a separate page for server history logs to display every single upload and job run
-    - and also another page for bookmarks with add+delete and custom tags for grouping
-
-    Alternatively you could rework the index page and for example
-    - move the current panel into left
-    - then add separate panels for logs and hyperlinks
-
-- add file IDs so urls don't include names anymore
-- switch file view between list (current) and grid
-
-#### Maybe eventually
-
-- file thumbnails/icons (easy to add simple "string" icons, but what about a more elaborate system)
-- scripting API: replace polling with websockets
-- upgrade from http to https
-
-
 ## References
 
-#### C (network) programming
+#### C
+
 - [Beej's Guide to Network Programming](https://beej.us/guide/bgnet/)
-    - also just Beej's C language guides in general
+    - Beej's other guides are very good as well, they can be found [here](https://beej.us/guide)
 - [The Open Group](https://pubs.opengroup.org/onlinepubs/7908799/)
 - [Linux man pages](https://man7.org/linux/man-pages/)
-- [cppreference](https://en.cppreference.com/c/header) (standard lib headers)
+- [Linux.die.net](https://linux.die.net/)
+- [devdocs](https://devdocs.io/c/)
+- [cppreference](https://en.cppreference.com/c/header)
 
 #### Web
 
